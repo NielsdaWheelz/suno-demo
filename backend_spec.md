@@ -24,6 +24,7 @@
 ## public signatures (types per spec; docstrings terse)
 ```python
 # models/domain.py
+from datetime import UTC, datetime
 class BriefParams(BaseModel):
     energy: float
     density: float
@@ -37,7 +38,7 @@ class Track(BaseModel):
     audio_url: str
     duration_sec: float
     raw_prompt: str
-    created_at: datetime
+    created_at: datetime  # defaults use datetime.now(UTC)
     """Stored track metadata; audio lives under media_root/session/track.wav."""
 
 class ClusterSummary(BaseModel):
@@ -45,13 +46,13 @@ class ClusterSummary(BaseModel):
     batch_id: UUID
     label: str
     track_ids: List[UUID]
-    created_at: datetime
+    created_at: datetime  # defaults use datetime.now(UTC)
     """Cluster label + member track ids."""
 
 class Batch(BaseModel):
     id: UUID
     session_id: UUID
-    created_at: datetime
+    created_at: datetime  # defaults use datetime.now(UTC)
     prompt_text: str
     num_requested: int
     num_generated: int
@@ -60,7 +61,7 @@ class Batch(BaseModel):
 
 class Session(BaseModel):
     id: UUID
-    created_at: datetime
+    created_at: datetime  # defaults use datetime.now(UTC)
     brief_text: str
     params: BriefParams
     batches: List[Batch]

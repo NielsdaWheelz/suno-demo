@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -17,9 +17,10 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     clap_model_name: str = "laion/clap-htsat-unfused"
 
-    class Config:
-        env_prefix = "SUNO_LAB_"
-        case_sensitive = False
+    model_config = SettingsConfigDict(
+        env_prefix="SUNO_LAB_",
+        case_sensitive=False,
+    )
 
 
 @lru_cache(maxsize=1)
