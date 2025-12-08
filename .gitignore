@@ -1,0 +1,51 @@
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+.venv/
+venv/
+env/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+coverage.xml
+htmlcov/
+.cache/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Logs
+*.log
+
+# Node / Next.js
+node_modules/
+.next/
+.turbo/
+.vercel/
+out/
+.npm/
+.yarn/
+pnpm-lock.yaml
+package-lock.json
+/.pnp*/
+.cache-loader/
+
+# Editor
+.vscode/
+.idea/
