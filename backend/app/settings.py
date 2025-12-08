@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,7 +16,8 @@ class Settings(BaseSettings):
     hf_model_id: str = "facebook/musicgen-small"
     hf_api_token: str | None = None
     openai_api_key: str | None = None
-    clap_model_name: str = "laion/clap-htsat-unfused"
+    clap_enabled: bool = Field(default=False)
+    clap_model_name: str = Field(default="laion/clap-htsat-unfused")
 
     model_config = SettingsConfigDict(
         env_prefix="SUNO_LAB_",

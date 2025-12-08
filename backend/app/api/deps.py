@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import Depends
 
+from backend.app.services.clap_embedding_provider import ClapEmbeddingProvider
 from backend.app.services.fake_cluster_naming_provider import FakeClusterNamingProvider
 from backend.app.services.fake_embedding_provider import FakeEmbeddingProvider
 from backend.app.services.fake_music_provider import FakeMusicProvider
@@ -39,7 +40,11 @@ def get_music_provider() -> MusicProvider:
 def get_embedding_provider() -> EmbeddingProvider:
     global _embedding_provider
     if _embedding_provider is None:
-        _embedding_provider = FakeEmbeddingProvider()
+        settings = get_settings()
+        if settings.clap_enabled:
+            _embedding_provider = ClapEmbeddingProvider(settings.clap_model_name)
+        else:
+            _embedding_provider = FakeEmbeddingProvider()
     return _embedding_provider
 
 
