@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import os
+
 from fastapi import Depends
 
 from backend.app.services.clap_embedding_provider import ClapEmbeddingProvider
 from backend.app.services.fake_cluster_naming_provider import FakeClusterNamingProvider
 from backend.app.services.fake_embedding_provider import FakeEmbeddingProvider
 from backend.app.services.fake_music_provider import FakeMusicProvider
+from backend.app.services.openai_cluster_naming_provider import OpenAiClusterNamingProvider
 from backend.app.services.providers import (
     ClusterNamingProvider,
     EmbeddingProvider,
@@ -51,7 +54,11 @@ def get_embedding_provider() -> EmbeddingProvider:
 def get_cluster_namer() -> ClusterNamingProvider:
     global _cluster_namer
     if _cluster_namer is None:
-        _cluster_namer = FakeClusterNamingProvider()
+        settings = get_settings()
+        if settings.openai_api_key and not os.getenv("USE_FAKE_NAMER"):
+            _cluster_namer = OpenAiClusterNamingProvider(settings.openai_api_key)
+        else:
+            _cluster_namer = FakeClusterNamingProvider()
     return _cluster_namer
 
 
