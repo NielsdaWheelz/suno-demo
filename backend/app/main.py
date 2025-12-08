@@ -1,12 +1,11 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.settings import get_settings
-
-app = FastAPI()
-
 
 def _mount_media(app: FastAPI) -> None:
     settings = get_settings()
@@ -17,13 +16,15 @@ def _mount_media(app: FastAPI) -> None:
     )
 
 
-_mount_media(app)
-
-
-@app.on_event("startup")
-async def ensure_media_root() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     settings = get_settings()
     settings.media_root.mkdir(parents=True, exist_ok=True)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+_mount_media(app)
 
 
 @app.get("/health")
