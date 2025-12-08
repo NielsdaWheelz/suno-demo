@@ -45,16 +45,28 @@ class ClapEmbeddingProvider(EmbeddingProvider):
         self._processor, self._model, self._model_dim = _load_model_once(model_name)
 
     def embed_audio(self, audio_path: Path) -> np.ndarray:
+        # NOTE:
+        # - we intentionally bypass torchaudio.load/torchcodec; some wheel/env combos
+        #   lack working codec backends. WAV-only decode via wave is sufficient
+        #   because providers write 16-bit PCM WAV.
+        # - if you change music providers to emit other formats/bitrates, add a
+        #   decode path here instead of silently ingesting garbage.
         with wave.open(str(audio_path), "rb") as wf:
             sample_rate = wf.getframerate()
             num_channels = wf.getnchannels()
             num_frames = wf.getnframes()
+            sample_width = wf.getsampwidth()
+            if sample_width != 2:
+                raise ValueError("expected 16-bit PCM WAV input")
+            if num_channels not in (1, 2):
+                raise ValueError("expected mono or stereo PCM WAV input")
             audio_bytes = wf.readframes(num_frames)
 
         waveform_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32)
         if num_channels > 1:
             waveform_np = waveform_np.reshape(-1, num_channels).mean(axis=1)
 
+        # int16 PCM -> float32 [-1, 1]
         waveform = torch.from_numpy(waveform_np) / 32768.0
         waveform = waveform.unsqueeze(0)
 
