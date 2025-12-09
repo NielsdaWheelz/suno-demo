@@ -1,5 +1,3 @@
-# backend/Dockerfile
-
 FROM python:3.12-slim AS base
 
 # prevent python from writing .pyc and buffering stdout
@@ -21,14 +19,11 @@ RUN apt-get update && \
 RUN pip install --no-cache-dir uv
 
 # copy project metadata and sources before install
-COPY pyproject.toml uv.lock /app/
-COPY src /app/src
+COPY backend/pyproject.toml backend/uv.lock /app/
+COPY backend/src /app/src
 
 # install runtime deps (no dev extras)
 RUN uv pip install --system --frozen --no-cache-dir .
-
-# copy backend code
-# (already copied above)
 
 # create media root (render will mount ephemeral disk, this is fine for demo)
 RUN mkdir -p /app/media
