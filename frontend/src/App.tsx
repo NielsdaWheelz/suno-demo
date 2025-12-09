@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import type { ReactElement } from "react";
 import { useState } from "react";
-import { ApiError, createSession } from "./api/client";
+import { ApiError, createSession, moreLikeCluster } from "./api/client";
 import { BottomPlayer } from "./components/BottomPlayer";
 import { ClusterGrid } from "./components/ClusterGrid";
 import { ControlPanel } from "./components/ControlPanel";
@@ -62,6 +62,49 @@ export function App(): ReactElement {
     },
   });
 
+  const moreLikeMutation = useMutation({
+    mutationFn: ({
+      sessionId,
+      clusterId,
+      numClips,
+    }: { sessionId: string; clusterId: string; numClips: number }) =>
+      moreLikeCluster(sessionId, clusterId, { num_clips: numClips }),
+    onMutate: ({ clusterId }) => {
+      setSession((prev) => ({
+        ...prev,
+        status: "loading",
+        loadingClusterId: clusterId,
+        errorMessage: undefined,
+      }));
+    },
+    onSuccess: (data) => {
+      const serverCluster = data.batch.clusters[0]; // spec: exactly one
+      const newCluster: ClusterView = {
+        id: serverCluster.id,
+        label: serverCluster.label,
+        tracks: serverCluster.tracks,
+        source: "more",
+        parentClusterId: data.parent_cluster_id,
+      };
+      setSession((prev) => ({
+        sessionId: data.session_id,
+        clusters: [...prev.clusters, newCluster],
+        status: "idle",
+        loadingClusterId: undefined,
+        errorMessage: undefined,
+      }));
+    },
+    onError: (err) => {
+      const message = err instanceof ApiError ? `Request failed (${err.status})` : "Unknown error";
+      setSession((prev) => ({
+        ...prev,
+        status: "error",
+        loadingClusterId: undefined,
+        errorMessage: message,
+      }));
+    },
+  });
+
   const handleBriefChange = (brief: string) => {
     setControls((prev) => ({ ...prev, brief }));
   };
@@ -82,6 +125,16 @@ export function App(): ReactElement {
       params: controls.params,
     };
     createSessionMutation.mutate(body);
+  };
+
+  const handleMoreLike = (clusterId: string) => {
+    const sid = session.sessionId;
+    if (!sid) return;
+    moreLikeMutation.mutate({
+      sessionId: sid,
+      clusterId,
+      numClips: controls.numClips,
+    });
   };
 
   return (
@@ -107,7 +160,7 @@ export function App(): ReactElement {
               status={session.status}
               loadingClusterId={session.loadingClusterId}
               numClips={controls.numClips}
-              onMoreLike={(id) => console.warn("stub", id)}
+              onMoreLike={handleMoreLike}
               onTrackSelect={(track, label) => console.warn("stub select", track, label)}
             />
           }
