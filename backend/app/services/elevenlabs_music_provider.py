@@ -12,7 +12,7 @@ from uuid import uuid4
 import requests
 
 from backend.app.services.providers import GeneratedClip, MusicProvider
-from backend.app.services.session_service import GenerationFailedError
+from backend.app.services.session_service import GenerationFailedError, InvalidRequestError
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +52,9 @@ class ElevenLabsMusicProvider(MusicProvider):
         for idx in range(num_clips):
             try:
                 clip = self._generate_single_clip(prompt, target_duration, idx)
+            except InvalidRequestError:
+                # propagate prompt violations immediately so caller can surface a 400
+                raise
             except Exception:
                 logger.exception("ElevenLabs clip generation failed (index=%s)", idx)
                 continue
@@ -88,12 +91,30 @@ class ElevenLabsMusicProvider(MusicProvider):
             url, headers=headers, params=params, json=payload, timeout=self.timeout_seconds
         )
         if resp.status_code != 200:
+            detail = None
+            suggestion = None
+            try:
+                detail_json = resp.json()
+                detail = detail_json.get("detail") if isinstance(detail_json, dict) else None
+                if isinstance(detail, dict):
+                    suggestion = detail.get("data", {}).get("prompt_suggestion")
+            except Exception:
+                detail_json = resp.text
+
             logger.error(
-                "ElevenLabs HTTP error clip=%s status=%s body=%s",
+                "ElevenLabs HTTP error clip=%s status=%s body=%s suggestion=%s",
                 clip_index,
                 resp.status_code,
-                resp.text,
+                detail_json,
+                suggestion,
             )
+
+            if resp.status_code == 400 and isinstance(detail, dict):
+                message = detail.get("message") or "prompt rejected by ElevenLabs"
+                if suggestion:
+                    message = f"{message} (suggestion: {suggestion})"
+                raise InvalidRequestError(message)
+
             raise GenerationFailedError(f"ElevenLabs: status {resp.status_code}")
 
         audio_bytes = self._extract_audio_bytes(resp)

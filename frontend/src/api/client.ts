@@ -15,12 +15,20 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = import.meta.env.VITE_API_BASE ?? "";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE ?? "";
+
+export const resolveApiUrl = (path: string): string => {
+  try {
+    return new URL(path, API_BASE_URL || window.location.origin).toString();
+  } catch {
+    return path;
+  }
+};
 
 export async function createSession(
   body: CreateSessionRequest,
 ): Promise<CreateSessionResponse> {
-  const res = await fetch(`${BASE_URL}/sessions`, {
+  const res = await fetch(`${API_BASE_URL}/sessions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -45,7 +53,7 @@ export async function moreLikeCluster(
   body: { num_clips: number },
 ): Promise<MoreLikeResponse> {
   const res = await fetch(
-    `${BASE_URL}/sessions/${sessionId}/clusters/${clusterId}/more`,
+    `${API_BASE_URL}/sessions/${sessionId}/clusters/${clusterId}/more`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

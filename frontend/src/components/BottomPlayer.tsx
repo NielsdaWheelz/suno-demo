@@ -1,3 +1,5 @@
+import type { JSX } from "react";
+import { resolveApiUrl } from "../api/client";
 import type { TrackOut } from "../types/api";
 
 export interface BottomPlayerProps {
@@ -18,7 +20,7 @@ export function BottomPlayer(props: BottomPlayerProps): JSX.Element {
           </div>
           <audio
             controls
-            src={currentTrack.track.audio_url}
+            src={resolveApiUrl(currentTrack.track.audio_url)}
             className="w-full max-w-md"
           />
         </>

@@ -133,7 +133,7 @@ export function ControlPanel(props: ControlPanelProps): JSX.Element {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm font-medium text-slate-200">
                 <label htmlFor="duration-slider">duration (sec)</label>
-                <span className="text-slate-400">{params.durationSec.toFixed(1)}</span>
+                <span className="text-slate-400">{params.duration_sec.toFixed(1)}</span>
               </div>
               <input
                 id="duration-slider"
@@ -141,8 +141,8 @@ export function ControlPanel(props: ControlPanelProps): JSX.Element {
                 min={1}
                 max={10}
                 step={0.5}
-                value={params.durationSec}
-                onChange={handleParamChange("durationSec")}
+                value={params.duration_sec}
+                onChange={handleParamChange("duration_sec")}
                 className="w-full accent-sky-500"
               />
             </div>

@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { TrackOut } from "../../types/api";
 import { BottomPlayer } from "../BottomPlayer";
+import { resolveApiUrl } from "../../api/client";
 
 describe("BottomPlayer", () => {
   it("shows idle state when no track is selected", () => {
@@ -27,6 +28,6 @@ describe("BottomPlayer", () => {
 
     const audioEl = container.querySelector("audio");
     expect(audioEl).not.toBeNull();
-    expect(audioEl?.getAttribute("src")).toBe(track.audio_url);
+    expect(audioEl?.getAttribute("src")).toBe(resolveApiUrl(track.audio_url));
   });
 });

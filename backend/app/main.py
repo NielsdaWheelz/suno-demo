@@ -65,7 +65,14 @@ app.include_router(sessions_router)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
-    return JSONResponse(status_code=400, content={"detail": exc.errors()})
+    # extra logging to make browser/QA failures easier to triage
+    logger.warning(
+        "validation_error path=%s errors=%s", request.url.path, exc.errors()
+    )
+    return JSONResponse(
+        status_code=400,
+        content={"error": "validation_error", "detail": exc.errors()},
+    )
 
 
 @app.get("/health")

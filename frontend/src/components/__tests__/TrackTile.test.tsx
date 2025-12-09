@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { TrackOut } from "../../types/api";
 import { TrackTile } from "../TrackTile";
+import { resolveApiUrl } from "../../api/client";
 
 const sampleTrack: TrackOut = {
   id: "abcdefghijk",
@@ -25,7 +26,7 @@ describe("TrackTile", () => {
 
     const audio = container.querySelector("audio");
     expect(audio).not.toBeNull();
-    expect(audio).toHaveAttribute("src", sampleTrack.audio_url);
+    expect(audio).toHaveAttribute("src", resolveApiUrl(sampleTrack.audio_url));
   });
 
   it("calls onSelect with track and label when button clicked", () => {
