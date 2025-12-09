@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: suno-backend
+    env: docker
+    rootDir: .            # repo root
+    dockerfilePath: backend/DOCKERFILE
+    buildContext: backend
