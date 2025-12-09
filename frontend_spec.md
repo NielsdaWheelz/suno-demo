@@ -235,19 +235,3 @@ export async function moreLikeCluster(
 
 ## 9. system diagram
 - data path: `UI components (ControlPanel → ClusterGrid/TrackTile → BottomPlayer)` → `api/client.ts` → backend endpoints (`POST /sessions`, `POST /sessions/{session_id}/clusters/{cluster_id}/more`) → responses mapped to `SessionState` → rerender `ClusterGrid` and `BottomPlayer`.
-
-## 10. pr roadmap (with required tests)
-1) scaffold (vite/react/ts/tailwind, ShellLayout/Sidebar/BottomPlayer placeholders).  
-   - tests: rendering smoke for ShellLayout slots; Sidebar renders title/items; BottomPlayer renders idle state.  
-2) types + api/client.ts + ControlPanel.  
-   - tests: api client throws ApiError on non-2xx; ControlPanel sliders/numClips updates; generate button fires only when `canGenerate === true`; numClips clamped to [1, 6].  
-3) App state wiring with react-query mutations; initial session flow.  
-   - tests: successful createSession maps batch → ClusterView (source initial); loading/error states set; error banner shows.  
-4) ClusterGrid/ClusterCard/TrackTile rendering initial batch.  
-   - tests: renders correct cluster/track counts from fake SessionState; clicking track tile triggers onTrackSelect; “more like this” button disables when `disabled` true.  
-5) “more like this” flow.  
-   - tests: per-card loading (`loadingClusterId`) set/cleared; maps MoreLikeResponse single cluster with parentClusterId; append order preserved.  
-6) styling polish (dark theme, grid responsiveness, primitives).  
-   - tests: basic snapshot/layout class presence for grid columns at breakpoints; BottomPlayer displays selected track when provided.  
-7) manual sanity against backend (happy path, error path, audio playback).  
-   - tests: lightweight e2e/dev harness checklist (documented), not automated.
