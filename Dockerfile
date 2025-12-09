@@ -29,5 +29,5 @@ RUN uv pip install --system --no-cache-dir .
 RUN mkdir -p /app/media
 ENV MEDIA_ROOT=/app/media
 
-# default command
-CMD ["uvicorn", "suno_backend.app.main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
+# default command (respect Render PORT if set)
+CMD ["sh", "-c", "uvicorn suno_backend.app.main:app --app-dir src --host 0.0.0.0 --port ${PORT:-8000}"]
