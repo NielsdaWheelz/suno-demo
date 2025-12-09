@@ -12,6 +12,8 @@ export function TrackTile(props: TrackTileProps): JSX.Element {
   const { track, clusterLabel } = props;
   const { playTrack } = usePlayer();
   const shortId = track.id.slice(0, 8);
+  const truncatedDuration = Math.floor(track.duration_sec * 100) / 100;
+  const durationLabel = `${truncatedDuration.toFixed(2)}s`;
 
   const handlePlayClick = () => {
     playTrack(track, clusterLabel);
@@ -29,7 +31,7 @@ export function TrackTile(props: TrackTileProps): JSX.Element {
           ▶
         </button>
 
-        <span className="text-slate-500">{track.duration_sec}s</span>
+        <span className="text-slate-500">{durationLabel}</span>
       </div>
     </div>
   );

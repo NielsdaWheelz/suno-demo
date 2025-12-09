@@ -6,21 +6,39 @@ import { TrackTile } from "./TrackTile";
 export interface ClusterCardProps {
   cluster: ClusterView;
   disabled: boolean;
+  isOnTrail: boolean;
+  isActive: boolean;
   onMoreLike: (clusterId: string) => void;
+  onSelectCluster: (clusterId: string) => void;
 }
 
 export function ClusterCard(props: ClusterCardProps): JSX.Element {
-  const { cluster, disabled, onMoreLike } = props;
+  const { cluster, disabled, isOnTrail, isActive, onMoreLike, onSelectCluster } = props;
   const parentLabel = cluster.parentClusterId
     ? `from ${cluster.parentClusterId.slice(0, 8)}`
     : null;
   const buttonLabel = disabled ? "Generating..." : "More like this";
+  const base = "rounded-lg border bg-slate-900 shadow-sm p-3 flex flex-col gap-3";
+  const borderClass = isActive
+    ? "border-sky-400"
+    : isOnTrail
+    ? "border-sky-700"
+    : "border-slate-800";
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-4 shadow-sm">
+    <div
+      data-testid={`cluster-card-${cluster.id}`}
+      className={`${base} ${borderClass}`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <div className="text-sm font-semibold text-slate-100">{cluster.label}</div>
+          <button
+            type="button"
+            onClick={() => onSelectCluster(cluster.id)}
+            className="text-sm font-medium text-slate-50 hover:text-sky-300"
+          >
+            {cluster.label}
+          </button>
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <span className="inline-flex items-center rounded-full bg-slate-800 px-2 py-0.5 font-medium text-slate-200">
               {cluster.source}

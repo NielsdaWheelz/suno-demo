@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import { useState } from "react";
 import { ApiError, createSession, moreLikeCluster } from "./api/client";
 import { BottomPlayer } from "./components/BottomPlayer";
+import { ClusterTrailBar } from "./components/ClusterTrailBar";
 import { ClusterGrid } from "./components/ClusterGrid";
 import { ControlPanel } from "./components/ControlPanel";
 import { MainPanel } from "./components/MainPanel";
@@ -19,6 +20,7 @@ export function App(): ReactElement {
     status: "idle",
     loadingClusterId: undefined,
     errorMessage: undefined,
+    activeClusterId: undefined,
   });
 
   const [controls, setControls] = useState<ControlPanelState>({
@@ -50,6 +52,7 @@ export function App(): ReactElement {
         status: "idle",
         loadingClusterId: undefined,
         errorMessage: undefined,
+        activeClusterId: undefined,
       });
 
       setControls((prev) => ({ ...prev, loading: false }));
@@ -97,6 +100,7 @@ export function App(): ReactElement {
         status: "idle",
         loadingClusterId: undefined,
         errorMessage: undefined,
+        activeClusterId: newCluster.id,
       }));
     },
     onError: (err) => {
@@ -141,11 +145,22 @@ export function App(): ReactElement {
   const handleMoreLike = (clusterId: string) => {
     const sid = session.sessionId;
     if (!sid) return;
+    setSession((prev) => ({
+      ...prev,
+      activeClusterId: clusterId,
+    }));
     moreLikeMutation.mutate({
       sessionId: sid,
       clusterId,
       numClips: controls.numClips,
     });
+  };
+
+  const handleSelectCluster = (clusterId: string | undefined) => {
+    setSession((prev) => ({
+      ...prev,
+      activeClusterId: clusterId,
+    }));
   };
 
   return (
@@ -166,14 +181,23 @@ export function App(): ReactElement {
               />
             }
             right={
-              <ClusterGrid
-                clusters={session.clusters}
-                sessionId={session.sessionId}
-                status={session.status}
-                loadingClusterId={session.loadingClusterId}
-                numClips={controls.numClips}
-                onMoreLike={handleMoreLike}
-              />
+              <div className="flex h-full flex-col gap-3">
+                <ClusterTrailBar
+                  clusters={session.clusters}
+                  activeClusterId={session.activeClusterId}
+                  onSelectCluster={handleSelectCluster}
+                />
+                <ClusterGrid
+                  clusters={session.clusters}
+                  sessionId={session.sessionId}
+                  status={session.status}
+                  loadingClusterId={session.loadingClusterId}
+                  numClips={controls.numClips}
+                  activeClusterId={session.activeClusterId}
+                  onMoreLike={handleMoreLike}
+                  onSelectCluster={(id) => handleSelectCluster(id)}
+                />
+              </div>
             }
           />
         }

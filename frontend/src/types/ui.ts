@@ -16,6 +16,7 @@ export type SessionState = {
   status: SessionStatus;
   loadingClusterId?: string; // when set, that cluster's "more like this" shows loading/disabled
   errorMessage?: string;
+  activeClusterId?: string;
 };
 
 export type ControlPanelState = {

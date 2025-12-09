@@ -80,7 +80,7 @@ describe("App more like flow", () => {
     renderApp();
 
     fireEvent.click(screen.getByRole("button", { name: /generate/i }));
-    await screen.findByText("initial cluster");
+    await screen.findAllByText("initial cluster");
 
     const moreButton = screen.getByRole("button", { name: /more like this/i });
     fireEvent.click(moreButton);
@@ -90,7 +90,7 @@ describe("App more like flow", () => {
 
     resolveMore?.(moreResponse);
 
-    await screen.findByText("more cluster");
+    await screen.findAllByText("more cluster");
     expect(screen.getAllByText("more").length).toBeGreaterThan(0);
     await waitFor(() => expect(screen.getByText(/idle/i)).toBeInTheDocument());
 
@@ -105,7 +105,7 @@ describe("App more like flow", () => {
     renderApp();
 
     fireEvent.click(screen.getByRole("button", { name: /generate/i }));
-    await screen.findByText("initial cluster");
+    await screen.findAllByText("initial cluster");
 
     const moreButton = screen.getByRole("button", { name: /more like this/i });
     fireEvent.click(moreButton);
