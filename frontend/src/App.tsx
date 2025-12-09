@@ -8,7 +8,7 @@ import { ControlPanel } from "./components/ControlPanel";
 import { MainPanel } from "./components/MainPanel";
 import { ShellLayout } from "./components/ShellLayout";
 import { Sidebar } from "./components/Sidebar";
-import type { BriefParams, CreateSessionRequest } from "./types/api";
+import type { BriefParams, CreateSessionRequest, TrackOut } from "./types/api";
 import type { ClusterView, ControlPanelState, SessionState } from "./types/ui";
 
 export function App(): ReactElement {
@@ -19,6 +19,10 @@ export function App(): ReactElement {
     loadingClusterId: undefined,
     errorMessage: undefined,
   });
+
+  const [currentTrack, setCurrentTrack] = useState<
+    { track: TrackOut; clusterLabel: string } | undefined
+  >(undefined);
 
   const [controls, setControls] = useState<ControlPanelState>({
     brief: "",
@@ -137,6 +141,10 @@ export function App(): ReactElement {
     });
   };
 
+  const handleTrackSelect = (track: TrackOut, clusterLabel: string) => {
+    setCurrentTrack({ track, clusterLabel });
+  };
+
   return (
     <ShellLayout
       sidebar={
@@ -161,14 +169,14 @@ export function App(): ReactElement {
               loadingClusterId={session.loadingClusterId}
               numClips={controls.numClips}
               onMoreLike={handleMoreLike}
-              onTrackSelect={(track, label) => console.warn("stub select", track, label)}
+              onTrackSelect={handleTrackSelect}
             />
           }
           status={session.status}
           errorMessage={session.errorMessage}
         />
       }
-      bottom={<BottomPlayer />}
+      bottom={<BottomPlayer currentTrack={currentTrack} />}
     />
   );
 }

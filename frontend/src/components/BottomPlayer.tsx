@@ -1,30 +1,30 @@
-import React from "react";
+import type { TrackOut } from "../types/api";
 
 export interface BottomPlayerProps {
-  currentTrack?: { trackId: string; label: string };
+  currentTrack?: { track: TrackOut; clusterLabel: string };
 }
 
 export function BottomPlayer(props: BottomPlayerProps): JSX.Element {
   const { currentTrack } = props;
-  const shortId =
-    currentTrack?.trackId.slice(0, 8) ?? undefined;
+  const shortId = currentTrack?.track.id.slice(0, 8);
 
   return (
-    <div className="flex h-[72px] items-center justify-between bg-slate-900 px-6 text-slate-100">
+    <div className="flex h-[80px] items-center justify-between border-t border-slate-800 bg-slate-900 px-6 text-slate-100">
       {currentTrack ? (
-        <div className="flex flex-col gap-1">
-          <div className="text-sm text-slate-300">Now playing</div>
-          <div className="text-base font-medium">
-            {currentTrack.label}
-            {shortId ? <span className="text-slate-400"> · {shortId}</span> : null}
+        <>
+          <div className="flex flex-col gap-1">
+            <div className="text-sm font-medium text-white">{currentTrack.clusterLabel}</div>
+            {shortId ? <div className="text-xs text-slate-400">{shortId}</div> : null}
           </div>
-        </div>
+          <audio
+            controls
+            src={currentTrack.track.audio_url}
+            className="w-64 max-w-full"
+          />
+        </>
       ) : (
-        <div className="text-sm text-slate-300">select a track to preview</div>
+        <div className="text-sm text-slate-300">Select a track to preview</div>
       )}
-      <div className="text-xs uppercase tracking-wide text-slate-500">
-        placeholder
-      </div>
     </div>
   );
 }
