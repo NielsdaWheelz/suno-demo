@@ -1,16 +1,17 @@
-frontend pr roadmap
+# frontend pr roadmap
 
-⸻
+---
 
-PR0 – project scaffold + shell layout skeleton
+## PR0 – project scaffold + shell layout skeleton
 
 goal: vite + react + ts + tailwind set up, with the basic 3-zone layout (sidebar, main, bottom) but no real state, no API.
 
 scope (only):
-	•	create vite project (react-ts template).
-	•	integrate tailwind.
-	•	implement these components:
+- create vite project (react-ts template).
+- integrate tailwind.
+- implement these components:
 
+```tsx
 // src/components/ShellLayout.tsx
 export interface ShellLayoutProps {
   sidebar: React.ReactNode;
@@ -18,29 +19,36 @@ export interface ShellLayoutProps {
   bottom: React.ReactNode;
 }
 export function ShellLayout(props: ShellLayoutProps): JSX.Element { ... }
+```
 
+```tsx
 // src/components/Sidebar.tsx
 export interface SidebarProps {
   title: string;
   items: { id: string; label: string }[];
 }
 export function Sidebar(props: SidebarProps): JSX.Element { ... }
+```
 
+```tsx
 // src/components/BottomPlayer.tsx
 export interface BottomPlayerProps {
   currentTrack?: { trackId: string; label: string };
 }
 export function BottomPlayer(props: BottomPlayerProps): JSX.Element { ... }
+```
 
+```tsx
 // src/components/MainPanel.tsx
 export interface MainPanelProps {
   children?: React.ReactNode;
 }
 export function MainPanel(props: MainPanelProps): JSX.Element { ... }
+```
 
+- App.tsx just wires these together with dummy content:
 
-	•	App.tsx just wires these together with dummy content:
-
+```tsx
 export function App() {
   return (
     <ShellLayout
@@ -50,33 +58,34 @@ export function App() {
     />
   );
 }
+```
 
-
-	•	layout: use CSS grid as described in spec (no need to be pixel-perfect yet).
+- layout: use CSS grid as described in spec (no need to be pixel-perfect yet).
 
 tests (write first):
-	•	src/components/__tests__/ShellLayout.test.tsx
-	•	renders children in correct regions (sidebar, main, bottom).
-	•	Sidebar.test.tsx
-	•	renders title + all items.
-	•	BottomPlayer.test.tsx
-	•	when currentTrack undefined → shows “select a track” text.
-	•	when provided → shows label.
+- src/components/__tests__/ShellLayout.test.tsx
+- renders children in correct regions (sidebar, main, bottom).
+- Sidebar.test.tsx
+- renders title + all items.
+- BottomPlayer.test.tsx
+- when currentTrack undefined → shows “select a track” text.
+- when provided → shows label.
 
 what NOT to do in this PR:
-	•	no API types, no state management.
-	•	no ControlPanel/ClusterGrid.
-	•	no fetch, no react-query.
+- no API types, no state management.
+- no ControlPanel/ClusterGrid.
+- no fetch, no react-query.
 
-⸻
+---
 
-PR1 – API + UI type definitions, api/client.ts (no wiring yet)
+## PR1 – API + UI type definitions, api/client.ts (no wiring yet)
 
 goal: lock the TS data contracts and the API client surface. still no real app state.
 
 scope:
-	•	src/types/api.ts:
+- src/types/api.ts:
 
+```ts
 export type BriefParams = { energy: number; density: number; durationSec: number };
 
 export interface CreateSessionRequest { brief: string; num_clips: number; params: BriefParams; }
@@ -90,10 +99,11 @@ export interface BatchOut { id: string; clusters: ClusterOut[]; }
 export interface CreateSessionResponse { session_id: string; batch: BatchOut; }
 
 export interface MoreLikeResponse { session_id: string; parent_cluster_id: string; batch: BatchOut; }
+```
 
+- src/types/ui.ts:
 
-	•	src/types/ui.ts:
-
+```ts
 import type { TrackOut } from "./api";
 
 export type ClusterView = {
@@ -122,10 +132,11 @@ export type ControlPanelState = {
   loading: boolean;
   errorMessage?: string;
 };
+```
 
+- src/api/client.ts:
 
-	•	src/api/client.ts:
-
+```ts
 import {
   CreateSessionRequest,
   CreateSessionResponse,
@@ -189,28 +200,28 @@ export async function moreLikeCluster(
   }
   return (await res.json()) as MoreLikeResponse;
 }
-
-
+```
 
 tests:
-	•	api/client.test.ts (mock global.fetch):
-	•	success path: verify correct URL, method, body; resolve with 200 + JSON; function returns typed data.
-	•	non-2xx: verify ApiError is thrown with correct .status.
+- api/client.test.ts (mock global.fetch):
+- success path: verify correct URL, method, body; resolve with 200 + JSON; function returns typed data.
+- non-2xx: verify ApiError is thrown with correct .status.
 
 what NOT to do:
-	•	no App wiring.
-	•	no react-query.
-	•	no UI changes except imports compile.
+- no App wiring.
+- no react-query.
+- no UI changes except imports compile.
 
-⸻
+---
 
-PR2 – ControlPanel component + local control state (no network)
+## PR2 – ControlPanel component + local control state (no network)
 
 goal: build the control panel UI and local state wiring inside App, but still stub onGenerate (no backend).
 
 scope:
-	•	src/components/ControlPanel.tsx:
+- src/components/ControlPanel.tsx:
 
+```ts
 import type { BriefParams } from "../types/api";
 import type { ControlPanelState } from "../types/ui";
 
@@ -222,19 +233,21 @@ export interface ControlPanelProps extends ControlPanelState {
 }
 
 export function ControlPanel(props: ControlPanelProps): JSX.Element { ... }
+```
 
 behavior requirements:
-	•	numClips input is clamped to [1, 6] and integer (e.g. use stepper or manual clamp).
-	•	sliders:
-	•	energy, density: 0–1, step 0.01.
-	•	durationSec: 1–10, step 0.5.
-	•	generate button:
-	•	disabled when !canGenerate || loading.
-	•	calls onGenerate() once on click.
+- numClips input is clamped to [1, 6] and integer (e.g. use stepper or manual clamp).
+- sliders:
+- energy, density: 0–1, step 0.01.
+- durationSec: 1–10, step 0.5.
+- generate button:
+- disabled when !canGenerate || loading.
+- calls onGenerate() once on click.
 
-	•	App.tsx:
-	•	add local control state:
+- App.tsx:
+- add local control state:
 
+```ts
 const [controls, setControls] = useState<ControlPanelState>({
   brief: "",
   numClips: 3,
@@ -243,12 +256,13 @@ const [controls, setControls] = useState<ControlPanelState>({
   loading: false,
   errorMessage: undefined,
 });
+```
 
+- handle onBriefChange, onNumClipsChange, onParamsChange to update state.
+- onGenerate for now just console.log the payload; no API call yet.
+- MainPanel props updated to accept:
 
-	•	handle onBriefChange, onNumClipsChange, onParamsChange to update state.
-	•	onGenerate for now just console.log the payload; no API call yet.
-	•	MainPanel props updated to accept:
-
+```ts
 // simplify MainPanel to:
 export interface MainPanelProps {
   controlPanel: React.ReactNode;
@@ -256,32 +270,34 @@ export interface MainPanelProps {
   status: SessionStatus;
   errorMessage?: string;
 }
-
+```
 
 and App passes controlPanel=<ControlPanel ...> and placeholder clusters area.
 
 tests:
-	•	ControlPanel.test.tsx:
-	•	typing into brief calls onBriefChange with new value.
-	•	changing num_clips tries to go below 1 or above 6 → clamped in callback.
-	•	clicking generate when enabled calls onGenerate exactly once.
-	•	when loading=true, generate is disabled.
-	•	simple App.test.tsx:
-	•	renders ControlPanel with initial values (brief empty, sliders at defaults).
+- ControlPanel.test.tsx:
+- typing into brief calls onBriefChange with new value.
+- changing num_clips tries to go below 1 or above 6 → clamped in callback.
+- clicking generate when enabled calls onGenerate exactly once.
+- when loading=true, generate is disabled.
+- simple App.test.tsx:
+- renders ControlPanel with initial values (brief empty, sliders at defaults).
 
 what NOT to do:
-	•	no usage of createSession yet.
-	•	no ClusterGrid.
+- no usage of createSession yet.
+- no ClusterGrid.
+- no react-query.
 
-⸻
+---
 
-PR3 – ClusterGrid, ClusterCard, TrackTile (purely from mock data)
+## PR3 – ClusterGrid, ClusterCard, TrackTile (purely from mock data)
 
 goal: build the result grid components and their props, but still no network and no real session state. App feeds them mock ClusterView[].
 
 scope:
-	•	src/components/TrackTile.tsx:
+- src/components/TrackTile.tsx:
 
+```ts
 import type { TrackOut } from "../types/api";
 
 export interface TrackTileProps {
@@ -291,14 +307,16 @@ export interface TrackTileProps {
 }
 
 export function TrackTile(props: TrackTileProps): JSX.Element { ... }
+```
 
 behavior:
-	•	show short id (e.g. track.id.slice(0, 8)), duration text.
-	•	<audio controls src={track.audio_url}>.
-	•	“Select” button that calls onSelect(track, clusterLabel).
+- show short id (e.g. track.id.slice(0, 8)), duration text.
+- <audio controls src={track.audio_url}>.
+- “Select” button that calls onSelect(track, clusterLabel).
 
-	•	src/components/ClusterCard.tsx:
+- src/components/ClusterCard.tsx:
 
+```ts
 import type { ClusterView } from "../types/ui";
 
 export interface ClusterCardProps {
@@ -309,17 +327,19 @@ export interface ClusterCardProps {
 }
 
 export function ClusterCard(props: ClusterCardProps): JSX.Element { ... }
+```
 
 behavior:
-	•	header shows cluster.label and cluster.source tag.
-	•	if cluster.parentClusterId exists, show “from ”.
-	•	“More like this” button:
-	•	disabled when disabled true.
-	•	calls onMoreLike(cluster.id) once on click.
-	•	renders each track with TrackTile.
+- header shows cluster.label and cluster.source tag.
+- if cluster.parentClusterId exists, show “from ”.
+- “More like this” button:
+- disabled when disabled true.
+- calls onMoreLike(cluster.id) once on click.
+- renders each track with TrackTile.
 
-	•	src/components/ClusterGrid.tsx:
+- src/components/ClusterGrid.tsx:
 
+```ts
 import type { ClusterView, SessionStatus } from "../types/ui";
 
 export interface ClusterGridProps {
@@ -333,43 +353,45 @@ export interface ClusterGridProps {
 }
 
 export function ClusterGrid(props: ClusterGridProps): JSX.Element { ... }
+```
 
 behavior:
-	•	if status === "loading" and clusters.length === 0 → show “generating…” placeholder.
-	•	if status === "idle" and clusters.length === 0 → show “no results yet” text.
-	•	otherwise render grid of ClusterCard.
-	•	compute disabled for each card as status === "loading" || loadingClusterId === cluster.id || !sessionId.
+- if status === "loading" and clusters.length === 0 → show “generating…” placeholder.
+- if status === "idle" and clusters.length === 0 → show “no results yet” text.
+- otherwise render grid of ClusterCard.
+- compute disabled for each card as status === "loading" || loadingClusterId === cluster.id || !sessionId.
 
-	•	App.tsx:
-	•	create mock ClusterView[] and feed to ClusterGrid just to exercise the UI. No real API yet.
+- App.tsx:
+- create mock ClusterView[] and feed to ClusterGrid just to exercise the UI. No real API yet.
 
 tests:
-	•	ClusterGrid.test.tsx:
-	•	with empty clusters + idle → “no results yet”.
-	•	with empty clusters + loading → “generating…” text.
-	•	with clusters → renders one ClusterCard per cluster.
-	•	ClusterCard.test.tsx:
-	•	“more like this” button calls handler when enabled, not when disabled.
-	•	renders all tracks.
-	•	TrackTile.test.tsx:
-	•	renders <audio> with correct src.
-	•	“select” button calls onSelect.
+- ClusterGrid.test.tsx:
+- with empty clusters + idle → “no results yet”.
+- with empty clusters + loading → “generating…” text.
+- with clusters → renders one ClusterCard per cluster.
+- ClusterCard.test.tsx:
+- “more like this” button calls handler when enabled, not when disabled.
+- renders all tracks.
+- TrackTile.test.tsx:
+- renders <audio> with correct src.
+- “select” button calls onSelect.
 
 what NOT to do:
-	•	still no createSession/moreLikeCluster calls.
-	•	no real SessionState yet; just mock data.
+- still no createSession/moreLikeCluster calls.
+- no real SessionState yet; just mock data.
 
-⸻
+---
 
-PR4 – wire createSession API + real SessionState (initial batch only)
+## PR4 – wire createSession API + real SessionState (initial batch only)
 
 goal: hook the control panel to the real backend via createSession, populate SessionState, and render real clusters in the grid. no “more like this” yet.
 
 scope:
-	•	introduce react-query (@tanstack/react-query) with a QueryClientProvider in main.tsx.
-	•	in App.tsx:
-	•	add SessionState state:
+- introduce react-query (@tanstack/react-query) with a QueryClientProvider in main.tsx.
+- in App.tsx:
+- add SessionState state:
 
+```ts
 const [session, setSession] = useState<SessionState>({
   sessionId: null,
   clusters: [],
@@ -377,11 +399,12 @@ const [session, setSession] = useState<SessionState>({
   loadingClusterId: undefined,
   errorMessage: undefined,
 });
+```
 
+- add currentTrack state for BottomPlayer (but you don’t have to render audio yet; can pass label only).
+- set up useMutation(createSession):
 
-	•	add currentTrack state for BottomPlayer (but you don’t have to render audio yet; can pass label only).
-	•	set up useMutation(createSession):
-
+```ts
 const createSessionMutation = useMutation({
   mutationFn: (body: CreateSessionRequest) => createSession(body),
   onMutate: () => {
@@ -411,10 +434,11 @@ const createSessionMutation = useMutation({
     setControls((prev) => ({ ...prev, loading: false, errorMessage: message }));
   },
 });
+```
 
+- onGenerate now:
 
-	•	onGenerate now:
-
+```ts
 const handleGenerate = () => {
   const body: CreateSessionRequest = {
     brief: controls.brief,
@@ -423,33 +447,34 @@ const handleGenerate = () => {
   };
   createSessionMutation.mutate(body);
 };
+```
 
-
-	•	wire MainPanel with real session.status, session.errorMessage, ClusterGrid with real session.clusters and session.sessionId.
-	•	ClusterGrid.onMoreLike can still be a console.warn placeholder for now.
+- wire MainPanel with real session.status, session.errorMessage, ClusterGrid with real session.clusters and session.sessionId.
+- ClusterGrid.onMoreLike can still be a console.warn placeholder for now.
 
 tests:
-	•	use MSW or a jest fetch mock in App.createSession integration test:
-	•	when createSession resolves, the grid ends up with the correct number of clusters and tracks mapped from the response.
-	•	test error path:
-	•	mock createSession to reject with ApiError(500) and assert that:
-	•	session.status === "error"
-	•	ControlPanel displays error banner.
+- use MSW or a jest fetch mock in App.createSession integration test:
+- when createSession resolves, the grid ends up with the correct number of clusters and tracks mapped from the response.
+- test error path:
+- mock createSession to reject with ApiError(500) and assert that:
+- session.status === "error"
+- ControlPanel displays error banner.
 
 what NOT to do:
-	•	don’t implement moreLikeCluster yet.
-	•	don’t implement per-cluster loading.
+- don’t implement moreLikeCluster yet.
+- don’t implement per-cluster loading.
 
-⸻
+---
 
-PR5 – implement “more like this” flow (API + per-cluster loading)
+## PR5 – implement “more like this” flow (API + per-cluster loading)
 
 goal: wire the moreLikeCluster API, append new clusters, and implement per-cluster loading/disable semantics.
 
 scope:
-	•	in App.tsx:
-	•	add moreLikeClusterMutation:
+- in App.tsx:
+- add moreLikeClusterMutation:
 
+```ts
 const moreLikeMutation = useMutation({
   mutationFn: ({
     sessionId,
@@ -494,10 +519,11 @@ const moreLikeMutation = useMutation({
     }));
   },
 });
+```
 
+- ClusterGrid.onMoreLike in App:
 
-	•	ClusterGrid.onMoreLike in App:
-
+```ts
 const handleMoreLike = (clusterId: string) => {
   if (!session.sessionId) return;
   moreLikeMutation.mutate({
@@ -506,84 +532,86 @@ const handleMoreLike = (clusterId: string) => {
     numClips: controls.numClips,
   });
 };
+```
 
-
-	•	pass session.loadingClusterId properly into ClusterGrid. ClusterGrid already calculates disabled.
+- pass session.loadingClusterId properly into ClusterGrid. ClusterGrid already calculates disabled.
 
 tests:
-	•	integration test for moreLike:
-	•	start with a SessionState with one initial cluster.
-	•	simulate click on “more like this”:
-	•	mock moreLikeCluster to return a response with one new cluster.
-	•	assert that after resolve, there are 2 clusters, and second has source === "more" and parentClusterId set.
-	•	error case:
-	•	mock rejection → check status="error", error banner, and loadingClusterId cleared.
+- integration test for moreLike:
+- start with a SessionState with one initial cluster.
+- simulate click on “more like this”:
+- mock moreLikeCluster to return a response with one new cluster.
+- assert that after resolve, there are 2 clusters, and second has source === "more" and parentClusterId set.
+- error case:
+- mock rejection → check status="error", error banner, and loadingClusterId cleared.
 
 what NOT to do:
-	•	no styling polish yet beyond what’s needed to keep layout sane.
-	•	no changes to ControlPanel, except maybe disabling “more like this” when sessionId null (already done).
+- no styling polish yet beyond what’s needed to keep layout sane.
+- no changes to ControlPanel, except maybe disabling “more like this” when sessionId null (already done).
 
-⸻
+---
 
-PR6 – BottomPlayer + track selection wiring
+## PR6 – BottomPlayer + track selection wiring
 
 goal: make the bottom bar actually play the selected track using a single <audio> element.
 
 scope:
-	•	update BottomPlayerProps to use full track:
+- update BottomPlayerProps to use full track:
 
+```ts
 import type { TrackOut } from "../types/api";
 
 export interface BottomPlayerProps {
   currentTrack?: { track: TrackOut; clusterLabel: string };
 }
+```
 
+- BottomPlayer:
+- when currentTrack undefined → show “select a track to preview”.
+- when defined → show clusterLabel + track id slice and <audio controls src={currentTrack.track.audio_url}>.
+- in App.tsx:
+- maintain:
 
-	•	BottomPlayer:
-	•	when currentTrack undefined → show “select a track to preview”.
-	•	when defined → show clusterLabel + track id slice and <audio controls src={currentTrack.track.audio_url}>.
-	•	in App.tsx:
-	•	maintain:
-
+```ts
 const [currentTrack, setCurrentTrack] = useState<
   { track: TrackOut; clusterLabel: string } | undefined
 >(undefined);
+```
 
-
-	•	pass onTrackSelect down to ClusterGrid → ClusterCard → TrackTile.
-	•	TrackTile.onSelect uses setCurrentTrack.
+- pass onTrackSelect down to ClusterGrid → ClusterCard → TrackTile.
+- TrackTile.onSelect uses setCurrentTrack.
 
 tests:
-	•	BottomPlayer.test.tsx:
-	•	when currentTrack provided, renders <audio> with expected src.
-	•	integration:
-	•	simulate clicking “Select” on a TrackTile → BottomPlayer shows that track.
+- BottomPlayer.test.tsx:
+- when currentTrack provided, renders <audio> with expected src.
+- integration:
+- simulate clicking “Select” on a TrackTile → BottomPlayer shows that track.
 
 what NOT to do:
-	•	do not add playlist/queue logic.
-	•	no synchronization between inline <audio> in tiles and bottom player.
+- do not add playlist/queue logic.
+- no synchronization between inline <audio> in tiles and bottom player.
 
-⸻
+---
 
-PR7 – styling & polish (dark theme, loading, errors)
+## PR7 – styling & polish (dark theme, loading, errors)
 
 goal: make it look like a real app, but no new behavior.
 
 scope:
-	•	apply tailwind classes per spec to:
-	•	ShellLayout grid, sidebar, main, bottom.
-	•	ControlPanel (cards, sliders, button).
-	•	ClusterGrid / ClusterCard / TrackTile.
-	•	error banner + loading indicators.
-	•	optional tiny UX tweaks:
-	•	show session.status and session.errorMessage in ControlPanel.
-	•	add small spinner icon to generate / more-like buttons when loading.
+- apply tailwind classes per spec to:
+- ShellLayout grid, sidebar, main, bottom.
+- ControlPanel (cards, sliders, button).
+- ClusterGrid / ClusterCard / TrackTile.
+- error banner + loading indicators.
+- optional tiny UX tweaks:
+- show session.status and session.errorMessage in ControlPanel.
+- add small spinner icon to generate / more-like buttons when loading.
 
 tests:
-	•	mostly snapshot/DOM sanity checks:
-	•	ensure error message text appears when errorMessage set.
-	•	ensure “generating…” text when status="loading" and no clusters.
+- mostly snapshot/DOM sanity checks:
+- ensure error message text appears when errorMessage set.
+- ensure “generating…” text when status="loading" and no clusters.
 
 what NOT to do:
-	•	no new API calls.
-	•	no extra flows.
+- no new API calls.
+- no extra flows.
