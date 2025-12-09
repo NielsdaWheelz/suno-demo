@@ -1,6 +1,5 @@
 // /src/components/ClusterCard.tsx
 import React from "react";
-import type { TrackOut } from "../types/api";
 import type { ClusterView } from "../types/ui";
 import { TrackTile } from "./TrackTile";
 
@@ -8,11 +7,10 @@ export interface ClusterCardProps {
   cluster: ClusterView;
   disabled: boolean;
   onMoreLike: (clusterId: string) => void;
-  onTrackSelect: (track: TrackOut, clusterLabel: string) => void;
 }
 
 export function ClusterCard(props: ClusterCardProps): JSX.Element {
-  const { cluster, disabled, onMoreLike, onTrackSelect } = props;
+  const { cluster, disabled, onMoreLike } = props;
   const parentLabel = cluster.parentClusterId
     ? `from ${cluster.parentClusterId.slice(0, 8)}`
     : null;
@@ -46,7 +44,6 @@ export function ClusterCard(props: ClusterCardProps): JSX.Element {
             key={track.id}
             track={track}
             clusterLabel={cluster.label}
-            onSelect={onTrackSelect}
           />
         ))}
       </div>

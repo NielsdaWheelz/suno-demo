@@ -8,7 +8,8 @@ import { ControlPanel } from "./components/ControlPanel";
 import { MainPanel } from "./components/MainPanel";
 import { ShellLayout } from "./components/ShellLayout";
 import { Sidebar } from "./components/Sidebar";
-import type { BriefParams, CreateSessionRequest, TrackOut } from "./types/api";
+import { PlayerProvider } from "./player/PlayerContext";
+import type { BriefParams, CreateSessionRequest } from "./types/api";
 import type { ClusterView, ControlPanelState, SessionState } from "./types/ui";
 
 export function App(): ReactElement {
@@ -19,10 +20,6 @@ export function App(): ReactElement {
     loadingClusterId: undefined,
     errorMessage: undefined,
   });
-
-  const [currentTrack, setCurrentTrack] = useState<
-    { track: TrackOut; clusterLabel: string } | undefined
-  >(undefined);
 
   const [controls, setControls] = useState<ControlPanelState>({
     brief: "",
@@ -115,6 +112,7 @@ export function App(): ReactElement {
         loadingClusterId: undefined,
         errorMessage: message,
       }));
+      setControls((prev) => ({ ...prev, errorMessage: message }));
     },
   });
 
@@ -150,40 +148,37 @@ export function App(): ReactElement {
     });
   };
 
-  const handleTrackSelect = (track: TrackOut, clusterLabel: string) => {
-    setCurrentTrack({ track, clusterLabel });
-  };
-
   return (
-    <ShellLayout
-      sidebar={
-        <Sidebar title="Suno Session Lab" items={[{ id: "create", label: "Create" }]} />
-      }
-      main={
-        <MainPanel
-          left={
-            <ControlPanel
-              {...controls}
-              onBriefChange={handleBriefChange}
-              onNumClipsChange={handleNumClipsChange}
-              onParamsChange={handleParamsChange}
-              onGenerate={handleGenerate}
-            />
-          }
-          right={
-            <ClusterGrid
-              clusters={session.clusters}
-              sessionId={session.sessionId}
-              status={session.status}
-              loadingClusterId={session.loadingClusterId}
-              numClips={controls.numClips}
-              onMoreLike={handleMoreLike}
-              onTrackSelect={handleTrackSelect}
-            />
-          }
-        />
-      }
-      bottom={<BottomPlayer currentTrack={currentTrack} />}
-    />
+    <PlayerProvider>
+      <ShellLayout
+        sidebar={
+          <Sidebar title="Suno Session Lab" items={[{ id: "create", label: "Create" }]} />
+        }
+        main={
+          <MainPanel
+            left={
+              <ControlPanel
+                {...controls}
+                onBriefChange={handleBriefChange}
+                onNumClipsChange={handleNumClipsChange}
+                onParamsChange={handleParamsChange}
+                onGenerate={handleGenerate}
+              />
+            }
+            right={
+              <ClusterGrid
+                clusters={session.clusters}
+                sessionId={session.sessionId}
+                status={session.status}
+                loadingClusterId={session.loadingClusterId}
+                numClips={controls.numClips}
+                onMoreLike={handleMoreLike}
+              />
+            }
+          />
+        }
+        bottom={<BottomPlayer />}
+      />
+    </PlayerProvider>
   );
 }
