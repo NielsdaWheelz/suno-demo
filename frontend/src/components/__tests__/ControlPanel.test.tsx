@@ -4,13 +4,11 @@ import { ControlPanel, type ControlPanelProps } from "../ControlPanel";
 
 const makeProps = (overrides: Partial<ControlPanelProps> = {}): ControlPanelProps => ({
   brief: "lofi beats",
-  numClips: 3,
   params: { energy: 0.3, density: 0.4, duration_sec: 6 },
   canGenerate: true,
   loading: false,
   errorMessage: undefined,
   onBriefChange: vi.fn(),
-  onNumClipsChange: vi.fn(),
   onParamsChange: vi.fn(),
   onGenerate: vi.fn(),
   ...overrides,
@@ -26,7 +24,6 @@ describe("ControlPanel", () => {
     render(<ControlPanel {...props} />);
 
     expect(screen.getByLabelText(/description/i)).toHaveValue("lofi beats");
-    expect(screen.getByLabelText(/number of clips/i)).toHaveValue(3);
     expect(screen.getByLabelText(/energy/i)).toHaveValue("0.3");
     expect(screen.getByLabelText(/density/i)).toHaveValue("0.4");
     expect(screen.getByLabelText(/duration/i)).toHaveValue("6");
@@ -42,24 +39,6 @@ describe("ControlPanel", () => {
 
     expect(props.onBriefChange).toHaveBeenCalledTimes(1);
     expect(props.onBriefChange).toHaveBeenCalledWith("new brief");
-  });
-
-  it("clamps numClips to integer within [1,6]", () => {
-    const onNumClipsChange = vi.fn();
-    render(<ControlPanel {...makeProps({ onNumClipsChange })} />);
-
-    const numInput = screen.getByLabelText(/number of clips/i);
-
-    fireEvent.change(numInput, { target: { value: "0" } });
-    expect(onNumClipsChange).toHaveBeenLastCalledWith(1);
-
-    onNumClipsChange.mockClear();
-    fireEvent.change(numInput, { target: { value: "10" } });
-    expect(onNumClipsChange).toHaveBeenLastCalledWith(6);
-
-    onNumClipsChange.mockClear();
-    fireEvent.change(numInput, { target: { value: "3.7" } });
-    expect(onNumClipsChange).toHaveBeenLastCalledWith(4);
   });
 
   it("disables generate button when loading or cannot generate", () => {

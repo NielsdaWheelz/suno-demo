@@ -61,10 +61,8 @@ describe("App createSession flow", () => {
 
     await waitFor(() => expect(screen.queryByText(/generating/i)).not.toBeInTheDocument());
     expect(screen.getAllByText("piano soft")[0]).toBeInTheDocument();
-    expect(screen.getByText("initial")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /generate/i })).not.toBeDisabled();
     expect(screen.getByRole("button", { name: /more like this/i })).not.toBeDisabled();
-    expect(screen.getByText("t1")).toBeInTheDocument();
   });
 
   it("surfaces errors when createSession fails", async () => {
