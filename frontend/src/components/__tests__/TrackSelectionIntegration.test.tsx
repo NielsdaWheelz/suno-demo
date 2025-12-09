@@ -43,6 +43,7 @@ function GridHarness(): JSX.Element {
         status="idle"
         onMoreLike={() => {}}
         onPlay={(n) => playTrack(n.track, n.label)}
+        onSelect={() => {}}
       />
       <BottomPlayer />
     </>

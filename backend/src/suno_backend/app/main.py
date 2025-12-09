@@ -27,9 +27,11 @@ def _mask(value: str | None) -> str:
 
 def _log_settings(settings: Settings) -> None:
     logger.info(
-        "settings resolved: media_root=%s music_provider=%s use_fake_namer=%s "
-        "clap_enabled=%s elevenlabs_output_format=%s elevenlabs_api_key=%s",
+        "settings resolved: media_root=%s cors_allow_origins=%s "
+        "music_provider=%s use_fake_namer=%s clap_enabled=%s "
+        "elevenlabs_output_format=%s elevenlabs_api_key=%s",
         settings.media_root,
+        settings.cors_allow_origins,
         settings.music_provider,
         settings.use_fake_namer,
         settings.clap_enabled,
@@ -51,10 +53,11 @@ async def lifespan(app: FastAPI):
     yield
 
 
+settings = get_settings()
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=settings.cors_allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

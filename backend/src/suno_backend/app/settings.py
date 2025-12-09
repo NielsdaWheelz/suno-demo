@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from pathlib import Path
-from pydantic import AliasChoices, Field, field_validator, model_validator
+from pydantic import AliasChoices, Field, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,11 +18,36 @@ def _project_root() -> Path:
 BASE_DIR = _project_root()
 
 
+def _parse_origins(value: str | list[str] | None) -> list[str]:
+    if value is None:
+        raise ValueError("cors_allow_origins_raw must be set via env")
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        try:
+            maybe_json = json.loads(value)
+            if isinstance(maybe_json, list):
+                return [origin.strip() for origin in maybe_json if str(origin).strip()]
+        except json.JSONDecodeError:
+            pass
+        return [origin.strip() for origin in value.split(",") if origin.strip()]
+    raise TypeError("cors_allow_origins must be a string or list")
+
+
 class Settings(BaseSettings):
     media_root: Path = BASE_DIR / "media"
     max_batch_size: int = 6
     default_max_k: int = 3
     min_similarity: float = 0.3
+    cors_allow_origins_raw: str | None = Field(
+        default=None,
+        alias=AliasChoices(
+            "SUNO_LAB_CORS_ALLOW_ORIGINS",
+            "SUNO_LAB_ALLOWED_ORIGINS",
+            "CORS_ALLOW_ORIGINS",
+            "ALLOWED_ORIGINS",
+        ),
+    )
     music_provider: str = Field(
         default="fake",
         validation_alias=AliasChoices("MUSIC_PROVIDER", "suno_lab_music_provider"),
@@ -54,6 +80,17 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls,
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        return (init_settings, env_settings, dotenv_settings, file_secret_settings)
+
     @model_validator(mode="before")
     @classmethod
     def _coerce_legacy_provider(cls, data):
@@ -76,6 +113,12 @@ class Settings(BaseSettings):
         if value not in {"fake", "elevenlabs"}:
             raise ValueError("music_provider must be 'fake' or 'elevenlabs'")
         return value
+
+    @computed_field
+    @property
+    def cors_allow_origins(self) -> list[str]:
+        return _parse_origins(self.cors_allow_origins_raw)
+
 
 
 @lru_cache(maxsize=1)

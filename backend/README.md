@@ -28,6 +28,7 @@ backend-only notes. frontend docs live in `frontend/README.md`.
 - `MAX_BATCH_SIZE` default `6` (service rejects > max).
 - `DEFAULT_MAX_K` default `3` (k-means cap).
 - `MIN_SIMILARITY` default `0.3` (filter threshold for “more like”).
+- `CORS_ALLOW_ORIGINS` comma-separated origins (default `http://localhost:5173,http://127.0.0.1:5173`).
 - `MUSIC_PROVIDER` default `fake`; choices: `fake`, `elevenlabs`.
 - `ELEVENLABS_API_KEY` (or `xi_api_key`) and `ELEVENLABS_OUTPUT_FORMAT` (default `pcm_44100`) when using ElevenLabs.
 - `CLAP_ENABLED` default `false`; `CLAP_MODEL_NAME` default `laion/clap-htsat-unfused`.
