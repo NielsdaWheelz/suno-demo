@@ -19,14 +19,11 @@ RUN apt-get update && \
 RUN pip install --no-cache-dir uv
 
 # copy project metadata, docs, and sources before install
-COPY pyproject.toml uv.lock README.md /app/
-COPY src /app/src
+COPY backend/pyproject.toml backend/uv.lock backend/README.md /app/
+COPY backend/src /app/src
 
 # install runtime deps (no dev extras)
 RUN uv pip install --system --no-cache-dir .
-
-# copy backend code
-# (already copied above)
 
 # create media root (render will mount ephemeral disk, this is fine for demo)
 RUN mkdir -p /app/media
