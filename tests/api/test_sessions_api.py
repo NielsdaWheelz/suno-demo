@@ -55,7 +55,7 @@ def client_with_service(tmp_path: Path):
 
 
 def _create_session(client: TestClient, brief: str = "uplifting trance", num_clips: int = 2):
-    params = {"energy": 0.7, "density": 0.5, "duration_sec": 12.0}
+    params = {"energy": 0.7, "density": 0.5, "duration_sec": 8.0}
     response = client.post(
         "/sessions",
         json={"brief": brief, "num_clips": num_clips, "params": params},
