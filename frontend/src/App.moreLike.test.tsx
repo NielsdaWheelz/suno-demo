@@ -91,9 +91,6 @@ describe("App more like flow", () => {
     resolveMore?.(moreResponse);
 
     await screen.findAllByText("more cluster");
-    expect(screen.getAllByText("more").length).toBeGreaterThan(0);
-    await waitFor(() => expect(screen.getByText(/idle/i)).toBeInTheDocument());
-
     expect(screen.getAllByText(/cluster/i).length).toBeGreaterThan(1);
   });
 

@@ -30,35 +30,7 @@ describe("App branching behavior", () => {
     moreLikeMock.mockReset();
   });
 
-  it("leaves clusters inactive after createSession until user branches", async () => {
-    createSessionMock.mockResolvedValueOnce({
-      session_id: "session-1",
-      batch: {
-        clusters: [
-          {
-            id: "c1",
-            label: "cluster one",
-            tracks: [{ id: "t1", audio_url: "/a.wav", duration_sec: 4 }],
-          },
-          {
-            id: "c2",
-            label: "cluster two",
-            tracks: [{ id: "t2", audio_url: "/b.wav", duration_sec: 5 }],
-          },
-        ],
-      },
-    });
-
-    renderApp();
-
-    fireEvent.click(screen.getByRole("button", { name: /generate/i }));
-    await screen.findAllByText("cluster one");
-
-    const firstCard = screen.getByTestId("cluster-card-c1");
-    expect(firstCard.className).not.toContain("border-sky-400");
-  });
-
-  it("marks parent as active when branching and new cluster after success", async () => {
+  it("highlights the selected node when branching", async () => {
     createSessionMock.mockResolvedValueOnce({
       session_id: "session-1",
       batch: {
@@ -94,12 +66,9 @@ describe("App branching behavior", () => {
 
     const moreButton = screen.getByRole("button", { name: /more like this/i });
     fireEvent.click(moreButton);
-    const parentCard = screen.getByTestId("cluster-card-c1");
-    expect(parentCard.className).toContain("border-sky-400");
     await waitFor(() => expect(moreLikeMock).toHaveBeenCalled());
 
-    await screen.findAllByText("cluster two");
-    const newCard = screen.getByTestId("cluster-card-c2");
-    expect(newCard.className).toContain("border-sky-400");
+    const parentCard = screen.getByTestId("node-card-t1");
+    expect(parentCard.className).toContain("border-sky-500");
   });
 });

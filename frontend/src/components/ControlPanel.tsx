@@ -4,7 +4,6 @@ import type { ControlPanelState } from "../types/ui";
 
 export interface ControlPanelProps extends ControlPanelState {
   onBriefChange: (v: string) => void;
-  onNumClipsChange: (v: number) => void;
   onParamsChange: (p: BriefParams) => void;
   onGenerate: () => void;
 }
@@ -12,33 +11,17 @@ export interface ControlPanelProps extends ControlPanelState {
 export function ControlPanel(props: ControlPanelProps): JSX.Element {
   const {
     brief,
-    numClips,
     params,
     canGenerate,
     loading,
     errorMessage,
     onBriefChange,
-    onNumClipsChange,
     onParamsChange,
     onGenerate,
   } = props;
 
-  const clampNumClips = (value: number): number => {
-    if (!Number.isFinite(value)) {
-      return 1;
-    }
-
-    const rounded = Math.round(value);
-    return Math.min(6, Math.max(1, rounded));
-  };
-
   const handleBriefChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     onBriefChange(event.target.value);
-  };
-
-  const handleNumClipsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const parsed = Number(event.target.value);
-    onNumClipsChange(clampNumClips(parsed));
   };
 
   const handleParamChange =
@@ -75,26 +58,6 @@ export function ControlPanel(props: ControlPanelProps): JSX.Element {
         </div>
 
         <div className="grid gap-4 md:grid-cols-[200px_1fr]">
-          <div className="space-y-2">
-            <label
-              className="block text-sm font-medium text-slate-200"
-              htmlFor="num-clips"
-            >
-              number of clips
-            </label>
-            <input
-              id="num-clips"
-              type="number"
-              min={1}
-              max={6}
-              step={1}
-              className="w-full rounded-md border border-slate-800 bg-slate-950/70 p-2 text-sm text-slate-100 shadow-inner focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
-              value={numClips}
-              onChange={handleNumClipsChange}
-            />
-            <p className="text-xs text-slate-500">clamped between 1 and 6</p>
-          </div>
-
           <div className="space-y-3">
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm font-medium text-slate-200">

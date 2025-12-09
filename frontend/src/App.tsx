@@ -3,29 +3,31 @@ import type { ReactElement } from "react";
 import { useState } from "react";
 import { ApiError, createSession, moreLikeCluster } from "./api/client";
 import { BottomPlayer } from "./components/BottomPlayer";
-import { ClusterTrailBar } from "./components/ClusterTrailBar";
-import { ClusterGrid } from "./components/ClusterGrid";
 import { ControlPanel } from "./components/ControlPanel";
 import { MainPanel } from "./components/MainPanel";
+import { NodeGrid } from "./components/NodeGrid";
 import { ShellLayout } from "./components/ShellLayout";
 import { Sidebar } from "./components/Sidebar";
-import { PlayerProvider } from "./player/PlayerContext";
+import { nodesFromInitialBatch, nodesFromMoreLike } from "./logic/nodes";
+import { PlayerProvider, usePlayer } from "./player/PlayerContext";
 import type { BriefParams, CreateSessionRequest } from "./types/api";
-import type { ClusterView, ControlPanelState, SessionState } from "./types/ui";
+import type { ControlPanelState, NodeView, SessionState } from "./types/ui";
 
-export function App(): ReactElement {
+const NUM_CLIPS = 3;
+
+function AppContent(): ReactElement {
+  const { playTrack } = usePlayer();
   const [session, setSession] = useState<SessionState>({
     sessionId: null,
-    clusters: [],
+    nodes: [],
     status: "idle",
-    loadingClusterId: undefined,
     errorMessage: undefined,
-    activeClusterId: undefined,
+    nextGenerationIndex: 0,
+    selectedNodeId: undefined,
   });
 
   const [controls, setControls] = useState<ControlPanelState>({
     brief: "",
-    numClips: 3,
     params: { energy: 0.5, density: 0.5, duration_sec: 8 },
     canGenerate: true,
     loading: false,
@@ -39,20 +41,15 @@ export function App(): ReactElement {
       setControls((prev) => ({ ...prev, loading: true, errorMessage: undefined }));
     },
     onSuccess: (data) => {
-      const clusters: ClusterView[] = data.batch.clusters.map((c) => ({
-        id: c.id,
-        label: c.label,
-        tracks: c.tracks,
-        source: "initial",
-      }));
+      const initialNodes = nodesFromInitialBatch(data.batch);
 
       setSession({
         sessionId: data.session_id,
-        clusters,
+        nodes: initialNodes,
         status: "idle",
-        loadingClusterId: undefined,
         errorMessage: undefined,
-        activeClusterId: undefined,
+        nextGenerationIndex: 1,
+        selectedNodeId: initialNodes[0]?.id,
       });
 
       setControls((prev) => ({ ...prev, loading: false }));
@@ -74,34 +71,30 @@ export function App(): ReactElement {
     mutationFn: ({
       sessionId,
       clusterId,
-      numClips,
-    }: { sessionId: string; clusterId: string; numClips: number }) =>
-      moreLikeCluster(sessionId, clusterId, { num_clips: numClips }),
-    onMutate: ({ clusterId }) => {
+      nodeId,
+    }: { sessionId: string; clusterId: string; nodeId: string }) =>
+      moreLikeCluster(sessionId, clusterId, { num_clips: NUM_CLIPS }),
+    onMutate: () => {
       setSession((prev) => ({
         ...prev,
         status: "loading",
-        loadingClusterId: clusterId,
         errorMessage: undefined,
       }));
     },
-    onSuccess: (data) => {
-      const serverCluster = data.batch.clusters[0]; // spec: exactly one
-      const newCluster: ClusterView = {
-        id: serverCluster.id,
-        label: serverCluster.label,
-        tracks: serverCluster.tracks,
-        source: "more",
-        parentClusterId: data.parent_cluster_id,
-      };
-      setSession((prev) => ({
-        sessionId: data.session_id,
-        clusters: [...prev.clusters, newCluster],
-        status: "idle",
-        loadingClusterId: undefined,
-        errorMessage: undefined,
-        activeClusterId: newCluster.id,
-      }));
+    onSuccess: (data, vars) => {
+      setSession((prev) => {
+        const newNodes = nodesFromMoreLike(data.batch, prev.nextGenerationIndex, vars.nodeId);
+
+        return {
+          ...prev,
+          sessionId: data.session_id,
+          nodes: [...prev.nodes, ...newNodes],
+          status: "idle",
+          errorMessage: undefined,
+          nextGenerationIndex: prev.nextGenerationIndex + 1,
+          selectedNodeId: vars.nodeId,
+        };
+      });
     },
     onError: (err) => {
       const message =
@@ -113,7 +106,6 @@ export function App(): ReactElement {
       setSession((prev) => ({
         ...prev,
         status: "error",
-        loadingClusterId: undefined,
         errorMessage: message,
       }));
       setControls((prev) => ({ ...prev, errorMessage: message }));
@@ -124,11 +116,6 @@ export function App(): ReactElement {
     setControls((prev) => ({ ...prev, brief }));
   };
 
-  const handleNumClipsChange = (numClips: number) => {
-    const clamped = Math.min(6, Math.max(1, Math.round(numClips)));
-    setControls((prev) => ({ ...prev, numClips: clamped }));
-  };
-
   const handleParamsChange = (params: BriefParams) => {
     setControls((prev) => ({ ...prev, params }));
   };
@@ -136,73 +123,66 @@ export function App(): ReactElement {
   const handleGenerate = () => {
     const body: CreateSessionRequest = {
       brief: controls.brief,
-      num_clips: controls.numClips,
+      num_clips: NUM_CLIPS,
       params: controls.params,
     };
     createSessionMutation.mutate(body);
   };
 
-  const handleMoreLike = (clusterId: string) => {
+  const handleMoreLike = (node: NodeView) => {
     const sid = session.sessionId;
     if (!sid) return;
-    setSession((prev) => ({
-      ...prev,
-      activeClusterId: clusterId,
-    }));
+
+    setSession((prev) => ({ ...prev, selectedNodeId: node.id }));
+
     moreLikeMutation.mutate({
       sessionId: sid,
-      clusterId,
-      numClips: controls.numClips,
+      clusterId: node.backendClusterId,
+      nodeId: node.id,
     });
   };
 
-  const handleSelectCluster = (clusterId: string | undefined) => {
-    setSession((prev) => ({
-      ...prev,
-      activeClusterId: clusterId,
-    }));
+  const handleSelectNode = (node: NodeView) => {
+    setSession((prev) => ({ ...prev, selectedNodeId: node.id }));
   };
 
   return (
+    <ShellLayout
+      sidebar={<Sidebar title="Suno Session Lab" items={[{ id: "create", label: "Create" }]} />}
+      main={
+        <MainPanel
+          left={
+            <ControlPanel
+              {...controls}
+              onBriefChange={handleBriefChange}
+              onParamsChange={handleParamsChange}
+              onGenerate={handleGenerate}
+            />
+          }
+          right={
+            <NodeGrid
+              nodes={session.nodes}
+              status={session.status}
+              onMoreLike={handleMoreLike}
+              onPlay={(node) => {
+                handleSelectNode(node);
+                playTrack(node.track, node.label);
+              }}
+              selectedNodeId={session.selectedNodeId}
+              onSelect={handleSelectNode}
+            />
+          }
+        />
+      }
+      bottom={<BottomPlayer />}
+    />
+  );
+}
+
+export function App(): ReactElement {
+  return (
     <PlayerProvider>
-      <ShellLayout
-        sidebar={
-          <Sidebar title="Suno Session Lab" items={[{ id: "create", label: "Create" }]} />
-        }
-        main={
-          <MainPanel
-            left={
-              <ControlPanel
-                {...controls}
-                onBriefChange={handleBriefChange}
-                onNumClipsChange={handleNumClipsChange}
-                onParamsChange={handleParamsChange}
-                onGenerate={handleGenerate}
-              />
-            }
-            right={
-              <div className="flex h-full flex-col gap-3">
-                <ClusterTrailBar
-                  clusters={session.clusters}
-                  activeClusterId={session.activeClusterId}
-                  onSelectCluster={handleSelectCluster}
-                />
-                <ClusterGrid
-                  clusters={session.clusters}
-                  sessionId={session.sessionId}
-                  status={session.status}
-                  loadingClusterId={session.loadingClusterId}
-                  numClips={controls.numClips}
-                  activeClusterId={session.activeClusterId}
-                  onMoreLike={handleMoreLike}
-                  onSelectCluster={(id) => handleSelectCluster(id)}
-                />
-              </div>
-            }
-          />
-        }
-        bottom={<BottomPlayer />}
-      />
+      <AppContent />
     </PlayerProvider>
   );
 }
