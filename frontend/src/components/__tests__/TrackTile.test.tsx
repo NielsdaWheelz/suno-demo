@@ -9,7 +9,7 @@ import { TrackTile } from "../TrackTile";
 const sampleTrack: TrackOut = {
   id: "abcdefghijk",
   audio_url: "/sample.wav",
-  duration_sec: 12,
+  duration_sec: 12.3456,
 };
 
 describe("TrackTile", () => {
@@ -26,7 +26,7 @@ describe("TrackTile", () => {
     );
 
     expect(screen.getByText("abcdefgh")).toBeInTheDocument();
-    expect(screen.getByText("12s")).toBeInTheDocument();
+    expect(screen.getByText("12.34s")).toBeInTheDocument();
   });
 
   it("calls playTrack with track and label when Play is clicked", () => {

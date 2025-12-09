@@ -1,6 +1,7 @@
 // /src/components/ClusterGrid.tsx
 import React from "react";
 import type { ClusterView, SessionStatus } from "../types/ui";
+import { computeTrail } from "./ClusterTrailBar";
 import { ClusterCard } from "./ClusterCard";
 
 export interface ClusterGridProps {
@@ -9,11 +10,23 @@ export interface ClusterGridProps {
   status: SessionStatus;
   loadingClusterId?: string;
   numClips: number;
+  activeClusterId?: string;
   onMoreLike: (clusterId: string) => void;
+  onSelectCluster: (clusterId: string) => void;
 }
 
 export function ClusterGrid(props: ClusterGridProps): JSX.Element {
-  const { clusters, sessionId, status, loadingClusterId, onMoreLike } = props;
+  const {
+    clusters,
+    sessionId,
+    status,
+    loadingClusterId,
+    activeClusterId,
+    onMoreLike,
+    onSelectCluster,
+  } = props;
+  const trail = computeTrail(clusters, activeClusterId);
+  const trailIds = new Set(trail.map((c) => c.id));
 
   if (status === "loading" && clusters.length === 0) {
     return (
@@ -53,18 +66,23 @@ export function ClusterGrid(props: ClusterGridProps): JSX.Element {
   return (
     <div className="flex-1">
       <div className="mt-2 grid gap-4 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-      {clusters.map((cluster) => {
-        const disabled = status === "loading" || loadingClusterId === cluster.id || !sessionId;
+        {clusters.map((cluster) => {
+          const disabled = status === "loading" || loadingClusterId === cluster.id || !sessionId;
+          const isOnTrail = trailIds.has(cluster.id);
+          const isActive = cluster.id === activeClusterId;
 
-        return (
-          <ClusterCard
-            key={cluster.id}
-            cluster={cluster}
-            disabled={disabled}
-            onMoreLike={onMoreLike}
-          />
-        );
-      })}
+          return (
+            <ClusterCard
+              key={cluster.id}
+              cluster={cluster}
+              disabled={disabled}
+              isOnTrail={isOnTrail}
+              isActive={isActive}
+              onMoreLike={onMoreLike}
+              onSelectCluster={onSelectCluster}
+            />
+          );
+        })}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 // /src/components/__tests__/ClusterGrid.test.tsx
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import type { TrackOut } from "../../types/api";
 import type { ClusterView } from "../../types/ui";
 import { PlayerProvider } from "../../player/PlayerContext";
@@ -29,7 +29,9 @@ describe("ClusterGrid", () => {
           sessionId="session-1"
           status="idle"
           numClips={3}
+          activeClusterId={undefined}
           onMoreLike={() => {}}
+          onSelectCluster={() => {}}
         />
       </PlayerProvider>,
     );
@@ -45,7 +47,9 @@ describe("ClusterGrid", () => {
           sessionId="session-1"
           status="loading"
           numClips={3}
+          activeClusterId={undefined}
           onMoreLike={() => {}}
+          onSelectCluster={() => {}}
         />
       </PlayerProvider>,
     );
@@ -66,7 +70,9 @@ describe("ClusterGrid", () => {
           sessionId="session-1"
           status="idle"
           numClips={3}
+          activeClusterId={undefined}
           onMoreLike={() => {}}
+          onSelectCluster={() => {}}
         />
       </PlayerProvider>,
     );
@@ -86,7 +92,9 @@ describe("ClusterGrid", () => {
           status="idle"
           loadingClusterId={undefined}
           numClips={3}
+          activeClusterId={undefined}
           onMoreLike={() => {}}
+          onSelectCluster={() => {}}
         />
       </PlayerProvider>,
     );
@@ -101,7 +109,9 @@ describe("ClusterGrid", () => {
           status="loading"
           loadingClusterId={undefined}
           numClips={3}
+          activeClusterId={undefined}
           onMoreLike={() => {}}
+          onSelectCluster={() => {}}
         />
       </PlayerProvider>,
     );
@@ -116,11 +126,66 @@ describe("ClusterGrid", () => {
           status="idle"
           loadingClusterId="c3"
           numClips={3}
+          activeClusterId={undefined}
           onMoreLike={() => {}}
+          onSelectCluster={() => {}}
         />
       </PlayerProvider>,
     );
 
     expect(screen.getByRole("button", { name: /generating/i })).toBeDisabled();
+  });
+
+  it("marks trail clusters and active cluster with styling", () => {
+    const clusters: ClusterView[] = [
+      makeCluster({ id: "a", label: "cluster a" }),
+      makeCluster({ id: "b", label: "cluster b", parentClusterId: "a", source: "more" }),
+      makeCluster({ id: "c", label: "cluster c", parentClusterId: "b", source: "more" }),
+      makeCluster({ id: "d", label: "cluster d", parentClusterId: "x", source: "more" }),
+    ];
+
+    render(
+      <PlayerProvider>
+        <ClusterGrid
+          clusters={clusters}
+          sessionId="session-1"
+          status="idle"
+          numClips={3}
+          activeClusterId="c"
+          onMoreLike={() => {}}
+          onSelectCluster={() => {}}
+        />
+      </PlayerProvider>,
+    );
+
+    expect(screen.getByTestId("cluster-card-a").className).toContain("border-sky-700");
+    expect(screen.getByTestId("cluster-card-b").className).toContain("border-sky-700");
+    expect(screen.getByTestId("cluster-card-c").className).toContain("border-sky-400");
+    expect(screen.getByTestId("cluster-card-d").className).toContain("border-slate-800");
+  });
+
+  it("invokes onSelectCluster when a card header is clicked", () => {
+    const clusters: ClusterView[] = [
+      makeCluster({ id: "a", label: "cluster a" }),
+      makeCluster({ id: "b", label: "cluster b" }),
+    ];
+    const onSelect = vi.fn();
+
+    render(
+      <PlayerProvider>
+        <ClusterGrid
+          clusters={clusters}
+          sessionId="session-1"
+          status="idle"
+          numClips={3}
+          activeClusterId="b"
+          onMoreLike={() => {}}
+          onSelectCluster={onSelect}
+        />
+      </PlayerProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "cluster a" }));
+    expect(onSelect).toHaveBeenCalledWith("a");
   });
 });
