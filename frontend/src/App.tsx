@@ -27,7 +27,7 @@ export function App(): ReactElement {
   const [controls, setControls] = useState<ControlPanelState>({
     brief: "",
     numClips: 3,
-    params: { energy: 0.5, density: 0.5, durationSec: 8 },
+    params: { energy: 0.5, density: 0.5, duration_sec: 8 },
     canGenerate: true,
     loading: false,
     errorMessage: undefined,
@@ -59,7 +59,11 @@ export function App(): ReactElement {
     },
     onError: (err) => {
       const message =
-        err instanceof ApiError ? `Request failed (${err.status})` : "Unknown error";
+        err instanceof ApiError
+          ? typeof err.body === "object" && err.body && "detail" in err.body
+            ? String((err.body as Record<string, unknown>).detail)
+            : `Request failed (${err.status})`
+          : "Unknown error";
 
       setSession((prev) => ({ ...prev, status: "error", errorMessage: message }));
       setControls((prev) => ({ ...prev, loading: false, errorMessage: message }));
@@ -99,7 +103,12 @@ export function App(): ReactElement {
       }));
     },
     onError: (err) => {
-      const message = err instanceof ApiError ? `Request failed (${err.status})` : "Unknown error";
+      const message =
+        err instanceof ApiError
+          ? typeof err.body === "object" && err.body && "detail" in err.body
+            ? String((err.body as Record<string, unknown>).detail)
+            : `Request failed (${err.status})`
+          : "Unknown error";
       setSession((prev) => ({
         ...prev,
         status: "error",

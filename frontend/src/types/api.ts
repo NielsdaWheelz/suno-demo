@@ -1,7 +1,7 @@
 export type BriefParams = {
   energy: number; // 0..1
   density: number; // 0..1
-  durationSec: number; // 0 < durationSec <= 30 (frontend will normally use 1..10)
+  duration_sec: number; // 0 < duration_sec <= 30 (frontend will normally use 1..10)
 };
 
 export interface CreateSessionRequest {

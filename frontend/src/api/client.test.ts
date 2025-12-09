@@ -28,7 +28,7 @@ describe("createSession", () => {
     const body: CreateSessionRequest = {
       brief: "A dark synthwave track",
       num_clips: 3,
-      params: { energy: 0.8, density: 0.6, durationSec: 8 },
+      params: { energy: 0.8, density: 0.6, duration_sec: 8 },
     };
 
     const { createSession } = await loadClient();
@@ -56,7 +56,7 @@ describe("createSession", () => {
     const body: CreateSessionRequest = {
       brief: "Test",
       num_clips: 1,
-      params: { energy: 0.2, density: 0.3, durationSec: 5 },
+      params: { energy: 0.2, density: 0.3, duration_sec: 5 },
     };
 
     const { createSession, ApiError } = await loadClient();
@@ -69,7 +69,7 @@ describe("createSession", () => {
     }
 
     expect(caught).toBeInstanceOf(ApiError);
-    const apiError = caught as ApiError;
+    const apiError = caught as InstanceType<typeof ApiError>;
     expect(apiError.status).toBe(500);
     expect(apiError.body).toStrictEqual({ detail: "boom" });
     expect(apiError.message).toBe("createSession failed");
@@ -126,7 +126,7 @@ describe("moreLikeCluster", () => {
     }
 
     expect(caught).toBeInstanceOf(ApiError);
-    const apiError = caught as ApiError;
+    const apiError = caught as InstanceType<typeof ApiError>;
     expect(apiError.status).toBe(404);
     expect(apiError.body).toStrictEqual({ detail: "missing" });
     expect(apiError.message.startsWith("moreLikeCluster failed")).toBe(true);

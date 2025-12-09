@@ -24,7 +24,7 @@ export type ControlPanelState = {
   params: {
     energy: number; // 0..1
     density: number; // 0..1
-    durationSec: number; // 1..10 in UI, but backend accepts up to 30
+    duration_sec: number; // 1..10 in UI, but backend accepts up to 30
   };
   canGenerate: boolean;
   loading: boolean;

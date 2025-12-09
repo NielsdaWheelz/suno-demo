@@ -1,5 +1,6 @@
 // /src/components/TrackTile.tsx
 import React from "react";
+import { resolveApiUrl } from "../api/client";
 import type { TrackOut } from "../types/api";
 
 export interface TrackTileProps {
@@ -18,7 +19,7 @@ export function TrackTile(props: TrackTileProps): JSX.Element {
         <span className="truncate font-semibold text-slate-100">{shortId}</span>
         <span className="text-slate-500">{track.duration_sec}s</span>
       </div>
-      <audio controls src={track.audio_url} className="w-full" />
+      <audio controls src={resolveApiUrl(track.audio_url)} className="w-full" />
       <button
         type="button"
         className="inline-flex items-center justify-center rounded-md bg-slate-800 px-2 py-1 text-xs font-medium text-slate-100 transition hover:bg-slate-700"

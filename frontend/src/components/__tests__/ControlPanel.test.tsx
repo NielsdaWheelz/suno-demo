@@ -5,7 +5,7 @@ import { ControlPanel, type ControlPanelProps } from "../ControlPanel";
 const makeProps = (overrides: Partial<ControlPanelProps> = {}): ControlPanelProps => ({
   brief: "lofi beats",
   numClips: 3,
-  params: { energy: 0.3, density: 0.4, durationSec: 6 },
+  params: { energy: 0.3, density: 0.4, duration_sec: 6 },
   canGenerate: true,
   loading: false,
   errorMessage: undefined,
