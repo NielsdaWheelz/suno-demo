@@ -1,6 +1,5 @@
 // /src/components/ClusterGrid.tsx
 import React from "react";
-import type { TrackOut } from "../types/api";
 import type { ClusterView, SessionStatus } from "../types/ui";
 import { ClusterCard } from "./ClusterCard";
 
@@ -11,11 +10,10 @@ export interface ClusterGridProps {
   loadingClusterId?: string;
   numClips: number;
   onMoreLike: (clusterId: string) => void;
-  onTrackSelect: (track: TrackOut, clusterLabel: string) => void;
 }
 
 export function ClusterGrid(props: ClusterGridProps): JSX.Element {
-  const { clusters, sessionId, status, loadingClusterId, onMoreLike, onTrackSelect } = props;
+  const { clusters, sessionId, status, loadingClusterId, onMoreLike } = props;
 
   if (status === "loading" && clusters.length === 0) {
     return (
@@ -64,7 +62,6 @@ export function ClusterGrid(props: ClusterGridProps): JSX.Element {
             cluster={cluster}
             disabled={disabled}
             onMoreLike={onMoreLike}
-            onTrackSelect={onTrackSelect}
           />
         );
       })}

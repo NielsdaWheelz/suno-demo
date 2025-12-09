@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { TrackOut } from "../../types/api";
 import type { ClusterView } from "../../types/ui";
+import { PlayerProvider } from "../../player/PlayerContext";
 import { ClusterCard } from "../ClusterCard";
 
 const tracks: TrackOut[] = [
@@ -20,12 +21,9 @@ const baseCluster: ClusterView = {
 describe("ClusterCard", () => {
   it("renders label and source tag", () => {
     render(
-      <ClusterCard
-        cluster={baseCluster}
-        disabled={false}
-        onMoreLike={vi.fn()}
-        onTrackSelect={vi.fn()}
-      />,
+      <PlayerProvider>
+        <ClusterCard cluster={baseCluster} disabled={false} onMoreLike={vi.fn()} />
+      </PlayerProvider>,
     );
 
     expect(screen.getByText("ambient pads")).toBeInTheDocument();
@@ -39,12 +37,9 @@ describe("ClusterCard", () => {
     };
 
     render(
-      <ClusterCard
-        cluster={clusterWithParent}
-        disabled={false}
-        onMoreLike={vi.fn()}
-        onTrackSelect={vi.fn()}
-      />,
+      <PlayerProvider>
+        <ClusterCard cluster={clusterWithParent} disabled={false} onMoreLike={vi.fn()} />
+      </PlayerProvider>,
     );
 
     expect(screen.getByText("from parent-1")).toBeInTheDocument();
@@ -54,12 +49,9 @@ describe("ClusterCard", () => {
     const onMoreLike = vi.fn();
 
     render(
-      <ClusterCard
-        cluster={baseCluster}
-        disabled={false}
-        onMoreLike={onMoreLike}
-        onTrackSelect={vi.fn()}
-      />,
+      <PlayerProvider>
+        <ClusterCard cluster={baseCluster} disabled={false} onMoreLike={onMoreLike} />
+      </PlayerProvider>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /more like this/i }));
@@ -72,12 +64,9 @@ describe("ClusterCard", () => {
     const onMoreLike = vi.fn();
 
     render(
-      <ClusterCard
-        cluster={baseCluster}
-        disabled={true}
-        onMoreLike={onMoreLike}
-        onTrackSelect={vi.fn()}
-      />,
+      <PlayerProvider>
+        <ClusterCard cluster={baseCluster} disabled={true} onMoreLike={onMoreLike} />
+      </PlayerProvider>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /generating/i }));
@@ -87,15 +76,12 @@ describe("ClusterCard", () => {
 
   it("renders one TrackTile per track", () => {
     render(
-      <ClusterCard
-        cluster={baseCluster}
-        disabled={false}
-        onMoreLike={vi.fn()}
-        onTrackSelect={vi.fn()}
-      />,
+      <PlayerProvider>
+        <ClusterCard cluster={baseCluster} disabled={false} onMoreLike={vi.fn()} />
+      </PlayerProvider>,
     );
 
-    const selectButtons = screen.getAllByRole("button", { name: /send to player/i });
+    const selectButtons = screen.getAllByRole("button", { name: /▶/i });
     expect(selectButtons).toHaveLength(tracks.length);
   });
 });

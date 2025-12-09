@@ -1,9 +1,10 @@
 // /src/components/__tests__/TrackTile.test.tsx
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { TrackOut } from "../../types/api";
+import type { PlayerContextValue } from "../../player/PlayerContext";
+import { PlayerContext } from "../../player/PlayerContext";
 import { TrackTile } from "../TrackTile";
-import { resolveApiUrl } from "../../api/client";
 
 const sampleTrack: TrackOut = {
   id: "abcdefghijk",
@@ -13,30 +14,40 @@ const sampleTrack: TrackOut = {
 
 describe("TrackTile", () => {
   it("renders id slice and duration", () => {
-    render(<TrackTile track={sampleTrack} clusterLabel="cluster-1" onSelect={vi.fn()} />);
+    const value: PlayerContextValue = {
+      currentTrack: undefined,
+      playTrack: () => {},
+    };
+
+    render(
+      <PlayerContext.Provider value={value}>
+        <TrackTile track={sampleTrack} clusterLabel="cluster-1" />
+      </PlayerContext.Provider>,
+    );
 
     expect(screen.getByText("abcdefgh")).toBeInTheDocument();
     expect(screen.getByText("12s")).toBeInTheDocument();
   });
 
-  it("sets audio src to track url", () => {
-    const { container } = render(
-      <TrackTile track={sampleTrack} clusterLabel="cluster-1" onSelect={vi.fn()} />,
+  it("calls playTrack with track and label when Play is clicked", () => {
+    let lastCalled: { track?: TrackOut; clusterLabel?: string } = {};
+
+    const value: PlayerContextValue = {
+      currentTrack: undefined,
+      playTrack: (track, clusterLabel) => {
+        lastCalled = { track, clusterLabel };
+      },
+    };
+
+    render(
+      <PlayerContext.Provider value={value}>
+        <TrackTile track={sampleTrack} clusterLabel="cluster-1" />
+      </PlayerContext.Provider>,
     );
 
-    const audio = container.querySelector("audio");
-    expect(audio).not.toBeNull();
-    expect(audio).toHaveAttribute("src", resolveApiUrl(sampleTrack.audio_url));
-  });
+    fireEvent.click(screen.getByRole("button", { name: /▶/i }));
 
-  it("calls onSelect with track and label when button clicked", () => {
-    const onSelect = vi.fn();
-
-    render(<TrackTile track={sampleTrack} clusterLabel="cluster-1" onSelect={onSelect} />);
-
-    fireEvent.click(screen.getByRole("button", { name: /send to player/i }));
-
-    expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect).toHaveBeenCalledWith(sampleTrack, "cluster-1");
+    expect(lastCalled.track).toEqual(sampleTrack);
+    expect(lastCalled.clusterLabel).toBe("cluster-1");
   });
 });

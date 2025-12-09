@@ -1,12 +1,29 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
+import { useEffect } from "react";
 import type { TrackOut } from "../../types/api";
 import { BottomPlayer } from "../BottomPlayer";
 import { resolveApiUrl } from "../../api/client";
+import { PlayerProvider, usePlayer } from "../../player/PlayerContext";
+
+const playMock = vi.fn(() => Promise.resolve());
+
+beforeEach(() => {
+  vi.spyOn(window.HTMLMediaElement.prototype, "play").mockImplementation(playMock);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  playMock.mockClear();
+});
 
 describe("BottomPlayer", () => {
   it("shows idle state when no track is selected", () => {
-    const { container } = render(<BottomPlayer />);
+    const { container } = render(
+      <PlayerProvider>
+        <BottomPlayer />
+      </PlayerProvider>,
+    );
 
     expect(screen.getByText(/select a track to preview/i)).toBeInTheDocument();
     expect(container.querySelector("audio")).toBeNull();
@@ -19,8 +36,20 @@ describe("BottomPlayer", () => {
       duration_sec: 12,
     };
 
+    const Harness = () => {
+      const { playTrack } = usePlayer();
+
+      useEffect(() => {
+        playTrack(track, "bright synthwave");
+      }, [playTrack]);
+
+      return <BottomPlayer />;
+    };
+
     const { container } = render(
-      <BottomPlayer currentTrack={{ track, clusterLabel: "bright synthwave" }} />,
+      <PlayerProvider>
+        <Harness />
+      </PlayerProvider>,
     );
 
     expect(screen.getByText("bright synthwave")).toBeInTheDocument();
@@ -29,5 +58,6 @@ describe("BottomPlayer", () => {
     const audioEl = container.querySelector("audio");
     expect(audioEl).not.toBeNull();
     expect(audioEl?.getAttribute("src")).toBe(resolveApiUrl(track.audio_url));
+    expect(playMock).toHaveBeenCalled();
   });
 });

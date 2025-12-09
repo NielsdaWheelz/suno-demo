@@ -75,7 +75,7 @@ class ElevenLabsMusicProvider(MusicProvider):
         params = {"output_format": self.output_format}
         payload = {
             "prompt": prompt,
-            "music_length_ms": int(target_duration * 1000),
+            "music_length_ms": int(target_duration * 500),
             "model_id": "music_v1",
             "force_instrumental": True,
         }
