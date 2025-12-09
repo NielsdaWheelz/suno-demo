@@ -161,7 +161,7 @@ export function App(): ReactElement {
       }
       main={
         <MainPanel
-          controlPanel={
+          left={
             <ControlPanel
               {...controls}
               onBriefChange={handleBriefChange}
@@ -170,7 +170,7 @@ export function App(): ReactElement {
               onGenerate={handleGenerate}
             />
           }
-          clustersArea={
+          right={
             <ClusterGrid
               clusters={session.clusters}
               sessionId={session.sessionId}
@@ -181,8 +181,6 @@ export function App(): ReactElement {
               onTrackSelect={handleTrackSelect}
             />
           }
-          status={session.status}
-          errorMessage={session.errorMessage}
         />
       }
       bottom={<BottomPlayer currentTrack={currentTrack} />}
