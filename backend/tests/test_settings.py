@@ -10,9 +10,15 @@ from suno_backend.app.settings import Settings, get_settings
 def reset_settings_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     get_settings.cache_clear()
     monkeypatch.delenv("SUNO_LAB_MEDIA_ROOT", raising=False)
+    monkeypatch.delenv("SUNO_LAB_CORS_ALLOW_ORIGINS", raising=False)
+    monkeypatch.delenv("CORS_ALLOW_ORIGINS", raising=False)
+    monkeypatch.delenv("ALLOWED_ORIGINS", raising=False)
     yield
     get_settings.cache_clear()
     monkeypatch.delenv("SUNO_LAB_MEDIA_ROOT", raising=False)
+    monkeypatch.delenv("SUNO_LAB_CORS_ALLOW_ORIGINS", raising=False)
+    monkeypatch.delenv("CORS_ALLOW_ORIGINS", raising=False)
+    monkeypatch.delenv("ALLOWED_ORIGINS", raising=False)
 
 
 def test_get_settings_returns_settings_instance() -> None:
@@ -21,6 +27,28 @@ def test_get_settings_returns_settings_instance() -> None:
 
 def test_get_settings_returns_singleton() -> None:
     assert get_settings() is get_settings()
+
+
+def test_cors_allow_origins_default() -> None:
+    assert get_settings().cors_allow_origins == [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+
+def test_cors_allow_origins_env_override(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "SUNO_LAB_CORS_ALLOW_ORIGINS",
+        "https://example.com, https://foo.com",
+    )
+    get_settings.cache_clear()
+    settings = get_settings()
+    assert settings.cors_allow_origins == [
+        "https://example.com",
+        "https://foo.com",
+    ]
 
 
 def test_media_root_is_path() -> None:

@@ -1,0 +1,38 @@
+# backend/Dockerfile
+
+FROM python:3.12-slim AS base
+
+# prevent python from writing .pyc and buffering stdout
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# working dir
+WORKDIR /app
+
+# system deps for audio / torch / torchaudio (adjust if you know exactly what you need)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      ffmpeg \
+      libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# install uv for lockfile-aware installs
+RUN pip install --no-cache-dir uv
+
+# copy project metadata and sources before install
+COPY pyproject.toml uv.lock /app/
+COPY src /app/src
+
+# install runtime deps (no dev extras)
+RUN uv pip install --system --frozen --no-cache-dir .
+
+# copy backend code
+# (already copied above)
+
+# create media root (render will mount ephemeral disk, this is fine for demo)
+RUN mkdir -p /app/media
+ENV MEDIA_ROOT=/app/media
+
+# default command
+CMD ["uvicorn", "suno_backend.app.main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
