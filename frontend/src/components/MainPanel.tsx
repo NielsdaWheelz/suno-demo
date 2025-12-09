@@ -13,11 +13,16 @@ export function MainPanel(props: MainPanelProps): ReactElement {
   const { controlPanel, clustersArea, status, errorMessage, children } = props;
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-950">
-      <div className="mx-auto max-w-6xl px-6 py-6 space-y-4">
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6">
+        <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
+          <span>session</span>
+          <span>{status}</span>
+        </div>
+
         {errorMessage ? (
           <div
-            className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            className="rounded-md border border-red-700 bg-red-900/70 px-3 py-2 text-sm text-red-100"
             role="alert"
           >
             {errorMessage}
@@ -26,13 +31,7 @@ export function MainPanel(props: MainPanelProps): ReactElement {
 
         {controlPanel}
 
-        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-slate-900">Results</h2>
-            <div className="text-xs uppercase tracking-wide text-slate-500">{status}</div>
-          </div>
-          {clustersArea}
-        </div>
+        {clustersArea}
 
         {children}
       </div>

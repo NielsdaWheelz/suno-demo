@@ -32,7 +32,7 @@ describe("ClusterGrid", () => {
       />,
     );
 
-    expect(screen.getByText("no results yet")).toBeInTheDocument();
+    expect(screen.getByText(/no results yet/i)).toBeInTheDocument();
   });
 
   it('shows "generating…" when loading with no clusters', () => {
@@ -47,7 +47,7 @@ describe("ClusterGrid", () => {
       />,
     );
 
-    expect(screen.getByText("generating…")).toBeInTheDocument();
+    expect(screen.getByText(/generating/i)).toBeInTheDocument();
   });
 
   it("renders one ClusterCard per cluster", () => {
@@ -86,7 +86,7 @@ describe("ClusterGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /more like this/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /generating/i })).toBeDisabled();
 
     rerender(
       <ClusterGrid
@@ -100,7 +100,7 @@ describe("ClusterGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /more like this/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /generating/i })).toBeDisabled();
 
     rerender(
       <ClusterGrid
@@ -114,6 +114,6 @@ describe("ClusterGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /more like this/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /generating/i })).toBeDisabled();
   });
 });

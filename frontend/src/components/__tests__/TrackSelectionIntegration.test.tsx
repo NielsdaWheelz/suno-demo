@@ -46,7 +46,7 @@ describe("track selection integration", () => {
   it("clicking select updates the bottom player", () => {
     const { container } = render(<TestHarness />);
 
-    fireEvent.click(screen.getByRole("button", { name: /select/i }));
+    fireEvent.click(screen.getByRole("button", { name: /send to player/i }));
 
     expect(screen.getAllByText("driving techno")).toHaveLength(2);
 

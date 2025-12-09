@@ -33,7 +33,7 @@ describe("TrackTile", () => {
 
     render(<TrackTile track={sampleTrack} clusterLabel="cluster-1" onSelect={onSelect} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /select/i }));
+    fireEvent.click(screen.getByRole("button", { name: /send to player/i }));
 
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect).toHaveBeenCalledWith(sampleTrack, "cluster-1");

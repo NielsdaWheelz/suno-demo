@@ -80,7 +80,7 @@ describe("ClusterCard", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /more like this/i }));
+    fireEvent.click(screen.getByRole("button", { name: /generating/i }));
 
     expect(onMoreLike).not.toHaveBeenCalled();
   });
@@ -95,7 +95,7 @@ describe("ClusterCard", () => {
       />,
     );
 
-    const selectButtons = screen.getAllByRole("button", { name: /select/i });
+    const selectButtons = screen.getAllByRole("button", { name: /send to player/i });
     expect(selectButtons).toHaveLength(tracks.length);
   });
 });

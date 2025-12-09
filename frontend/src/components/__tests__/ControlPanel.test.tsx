@@ -65,7 +65,7 @@ describe("ControlPanel", () => {
   it("disables generate button when loading or cannot generate", () => {
     const { rerender } = render(<ControlPanel {...makeProps({ loading: true })} />);
 
-    const button = screen.getByRole("button", { name: /generate/i });
+    const button = screen.getByRole("button", { name: /generating/i });
     expect(button).toBeDisabled();
 
     rerender(<ControlPanel {...makeProps({ canGenerate: false })} />);

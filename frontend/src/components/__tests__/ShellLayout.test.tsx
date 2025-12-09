@@ -16,7 +16,8 @@ describe("ShellLayout", () => {
     expect(screen.getByText("Main content")).toBeInTheDocument();
     expect(screen.getByText("Bottom content")).toBeInTheDocument();
 
-    const root = container.firstChild as HTMLElement;
-    expect(root.className).toContain("grid");
+    const wrapper = container.firstChild as HTMLElement;
+    const grid = wrapper.firstChild as HTMLElement;
+    expect(grid.className).toContain("grid");
   });
 });
