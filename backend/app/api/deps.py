@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+import logging
 
 from fastapi import Depends
 
@@ -8,6 +8,7 @@ from backend.app.services.clap_embedding_provider import ClapEmbeddingProvider
 from backend.app.services.fake_cluster_naming_provider import FakeClusterNamingProvider
 from backend.app.services.fake_embedding_provider import FakeEmbeddingProvider
 from backend.app.services.fake_music_provider import FakeMusicProvider
+from backend.app.services.elevenlabs_music_provider import ElevenLabsMusicProvider
 from backend.app.services.openai_cluster_naming_provider import OpenAiClusterNamingProvider
 from backend.app.services.providers import (
     ClusterNamingProvider,
@@ -17,6 +18,8 @@ from backend.app.services.providers import (
 from backend.app.services.session_service import SessionService
 from backend.app.services.session_store import SessionStore
 from backend.app.settings import Settings, get_settings
+
+logger = logging.getLogger(__name__)
 
 _session_store: SessionStore | None = None
 _music_provider: MusicProvider | None = None
@@ -36,7 +39,19 @@ def get_music_provider() -> MusicProvider:
     global _music_provider
     if _music_provider is None:
         settings = get_settings()
-        _music_provider = FakeMusicProvider(settings.media_root)
+        if settings.music_provider == "fake":
+            _music_provider = FakeMusicProvider(settings.media_root)
+        elif settings.music_provider == "elevenlabs":
+            if not settings.elevenlabs_api_key:
+                raise ValueError("elevenlabs provider selected but missing api key")
+            _music_provider = ElevenLabsMusicProvider(
+                media_root=settings.media_root,
+                api_key=settings.elevenlabs_api_key,
+                output_format=settings.elevenlabs_output_format,
+            )
+        else:
+            raise ValueError(f"unsupported music_provider '{settings.music_provider}'")
+        logger.info("music provider initialized: %s", type(_music_provider).__name__)
     return _music_provider
 
 
@@ -55,7 +70,7 @@ def get_cluster_namer() -> ClusterNamingProvider:
     global _cluster_namer
     if _cluster_namer is None:
         settings = get_settings()
-        if settings.openai_api_key and not os.getenv("USE_FAKE_NAMER"):
+        if settings.openai_api_key and not settings.use_fake_namer:
             _cluster_namer = OpenAiClusterNamingProvider(settings.openai_api_key)
         else:
             _cluster_namer = FakeClusterNamingProvider()
