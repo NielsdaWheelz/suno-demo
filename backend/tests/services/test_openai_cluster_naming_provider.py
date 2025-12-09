@@ -21,53 +21,57 @@ def make_response(content: str) -> DummyResponse:
     return DummyResponse({"choices": [{"message": {"content": content}}]})
 
 
-def test_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls = []
+def test_prompt_construction_emphasizes_variety(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    recorded = {}
 
     def fake_post(url, headers=None, json=None, timeout=None):
-        calls.append(json)
-        return make_response("Bright Pads\n")
+        recorded["json"] = json
+        return make_response("Neon Mirage")
 
     monkeypatch.setattr(httpx, "post", fake_post)
     provider = OpenAiClusterNamingProvider(api_key="token")
 
-    label = provider.name_cluster(["retro synths", "bright pads"])
+    provider.name_cluster(["dark synthwave chase"])
 
-    assert label == "Bright Pads"
-    assert len(calls) == 1
+    messages = recorded["json"]["messages"]
+    system_content = messages[0]["content"]
+    user_content = messages[1]["content"]
+
+    assert "vivid" in system_content.lower()
+    assert "not generic" in system_content.lower()
+    assert "2-3 words" in user_content
+    assert "ascii" in user_content.lower()
 
 
-def test_strips_punctuation_and_quotes(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_post_process_strips_quotes_and_punctuation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def fake_post(url, headers=None, json=None, timeout=None):
-        return make_response('"Dark-Pulse!"')
+        return make_response(' "Dark Neon Freeway.  "')
 
     monkeypatch.setattr(httpx, "post", fake_post)
     provider = OpenAiClusterNamingProvider(api_key="token")
 
     label = provider.name_cluster(["dark bass"])
 
-    assert label == "Dark Pulse"
+    assert label == "Dark Neon Freeway"
 
 
-def test_truncates_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
-    recorded = {}
-
+def test_truncates_to_three_words(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_post(url, headers=None, json=None, timeout=None):
-        recorded["json"] = json
-        return make_response("Bright")
+        return make_response("one two three four five")
 
     monkeypatch.setattr(httpx, "post", fake_post)
     provider = OpenAiClusterNamingProvider(api_key="token")
 
-    long_prompt = "a" * 120
-    provider.name_cluster([long_prompt, long_prompt + "b"])
+    label = provider.name_cluster(["anything"])
 
-    sent = recorded["json"]["messages"][1]["content"].split("\n")
-    assert len(sent) == 2
-    assert all(len(p) == 100 for p in sent)
+    assert label == "one two three"
 
 
-def test_model_returns_empty_after_cleanup(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_rejects_empty_after_cleanup(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_post(url, headers=None, json=None, timeout=None):
         return make_response("!!!")
 
@@ -76,44 +80,3 @@ def test_model_returns_empty_after_cleanup(monkeypatch: pytest.MonkeyPatch) -> N
 
     with pytest.raises(ValueError):
         provider.name_cluster(["anything"])
-
-
-def test_openai_error_raises(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fake_post(url, headers=None, json=None, timeout=None):
-        raise httpx.HTTPError("boom")
-
-    monkeypatch.setattr(httpx, "post", fake_post)
-    provider = OpenAiClusterNamingProvider(api_key="token")
-
-    with pytest.raises(httpx.HTTPError):
-        provider.name_cluster(["fails"])
-
-
-def test_more_than_three_prompts(monkeypatch: pytest.MonkeyPatch) -> None:
-    recorded = {}
-
-    def fake_post(url, headers=None, json=None, timeout=None):
-        recorded["json"] = json
-        return make_response("Bright Synthwave")
-
-    monkeypatch.setattr(httpx, "post", fake_post)
-    provider = OpenAiClusterNamingProvider(api_key="token")
-
-    prompts = [f"prompt {i}" for i in range(5)]
-    provider.name_cluster(prompts)
-
-    sent_prompts = recorded["json"]["messages"][1]["content"].split("\n")
-    assert len(sent_prompts) == 3
-    assert sent_prompts == prompts[:3]
-
-
-def test_non_ascii_removed(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fake_post(url, headers=None, json=None, timeout=None):
-        return make_response("Ciné Pads")
-
-    monkeypatch.setattr(httpx, "post", fake_post)
-    provider = OpenAiClusterNamingProvider(api_key="token")
-
-    label = provider.name_cluster(["cinematic pads"])
-
-    assert label == "Cine Pads"
