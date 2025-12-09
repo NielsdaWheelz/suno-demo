@@ -54,7 +54,7 @@ describe("App createSession flow", () => {
     const generateButton = screen.getByRole("button", { name: /generate/i });
     fireEvent.click(generateButton);
 
-    await screen.findByText(/generating/i);
+    await screen.findAllByText(/generating/i);
     await waitFor(() => expect(createSessionMock).toHaveBeenCalledTimes(1));
 
     resolveRequest?.(response);
@@ -81,7 +81,7 @@ describe("App createSession flow", () => {
     const generateButton = screen.getByRole("button", { name: /generate/i });
     fireEvent.click(generateButton);
 
-    await screen.findByText(/generating/i);
+    await screen.findAllByText(/generating/i);
     await waitFor(() => expect(createSessionMock).toHaveBeenCalledTimes(1));
 
     rejectRequest?.(new ApiError("fail", 500));

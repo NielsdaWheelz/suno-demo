@@ -16,14 +16,15 @@ export function ClusterCard(props: ClusterCardProps): JSX.Element {
   const parentLabel = cluster.parentClusterId
     ? `from ${cluster.parentClusterId.slice(0, 8)}`
     : null;
+  const buttonLabel = disabled ? "Generating..." : "More like this";
 
   return (
-    <div className="space-y-3 rounded-lg border bg-white p-4 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <div className="text-base font-semibold text-slate-900">{cluster.label}</div>
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
+          <div className="text-sm font-semibold text-slate-100">{cluster.label}</div>
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <span className="inline-flex items-center rounded-full bg-slate-800 px-2 py-0.5 font-medium text-slate-200">
               {cluster.source}
             </span>
             {parentLabel ? <span className="text-slate-500">{parentLabel}</span> : null}
@@ -31,11 +32,11 @@ export function ClusterCard(props: ClusterCardProps): JSX.Element {
         </div>
         <button
           type="button"
-          className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
           onClick={() => onMoreLike(cluster.id)}
           disabled={disabled}
         >
-          More like this
+          {buttonLabel}
         </button>
       </div>
 

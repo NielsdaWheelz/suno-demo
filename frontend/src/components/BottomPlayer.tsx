@@ -9,7 +9,7 @@ export function BottomPlayer(props: BottomPlayerProps): JSX.Element {
   const shortId = currentTrack?.track.id.slice(0, 8);
 
   return (
-    <div className="flex h-[80px] items-center justify-between border-t border-slate-800 bg-slate-900 px-6 text-slate-100">
+    <div className="flex items-center gap-4 border-t border-slate-800 bg-slate-950/95 px-4 py-3">
       {currentTrack ? (
         <>
           <div className="flex flex-col gap-1">
@@ -19,11 +19,11 @@ export function BottomPlayer(props: BottomPlayerProps): JSX.Element {
           <audio
             controls
             src={currentTrack.track.audio_url}
-            className="w-64 max-w-full"
+            className="w-full max-w-md"
           />
         </>
       ) : (
-        <div className="text-sm text-slate-300">Select a track to preview</div>
+        <div className="text-sm text-slate-400">select a track to preview</div>
       )}
     </div>
   );
