@@ -17,6 +17,8 @@ from backend.app.services.providers import MusicProvider
 from backend.app.services.session_service import SessionService
 from backend.app.services.session_store import SessionStore
 from backend.app.settings import get_settings
+from backend.app.services.openai_cluster_naming_provider import OpenAiClusterNamingProvider
+import httpx
 
 
 class EmptyMusicProvider(MusicProvider):
@@ -193,3 +195,46 @@ def test_dependency_singletons() -> None:
     service_one = deps.get_session_service()
     service_two = deps.get_session_service()
     assert service_one is service_two
+
+
+def test_create_session_uses_openai_namer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded: dict[str, object] = {}
+
+    class _FakeResponse:
+        def __init__(self, payload: dict):
+            self.status_code = 200
+            self._payload = payload
+
+        def json(self):
+            return self._payload
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        recorded["json"] = json
+        return _FakeResponse({"choices": [{"message": {"content": "Neon Pads"}}]})
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+
+    settings = get_settings()
+    service = SessionService(
+        store=SessionStore(),
+        music=FakeMusicProvider(tmp_path),
+        embedder=FakeEmbeddingProvider(),
+        namer=OpenAiClusterNamingProvider(api_key="token"),
+        media_root=tmp_path,
+        max_batch_size=settings.max_batch_size,
+        default_max_k=settings.default_max_k,
+        min_similarity=settings.min_similarity,
+    )
+
+    app.dependency_overrides[get_session_service] = lambda: service
+    client = TestClient(app)
+    try:
+        response = _create_session(client, num_clips=1)
+        assert response.status_code == 200
+        data = response.json()
+        label = data["batch"]["clusters"][0]["label"]
+        assert label == "Neon Pads"
+        sent = recorded["json"]["messages"][1]["content"]
+        assert "uplifting trance" in sent
+    finally:
+        app.dependency_overrides.clear()

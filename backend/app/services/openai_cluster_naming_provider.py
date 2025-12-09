@@ -3,10 +3,13 @@ from __future__ import annotations
 import string
 import unicodedata
 from typing import List
+import logging
 
 import httpx
 
 from backend.app.services.providers import ClusterNamingProvider
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAiClusterNamingProvider(ClusterNamingProvider):
@@ -22,6 +25,9 @@ class OpenAiClusterNamingProvider(ClusterNamingProvider):
         """
         prepared_prompts = [prompt[:100] for prompt in prompts[:3]]
         prompt_body = "\n".join(prepared_prompts)  # newline joining to preserve separation
+        logger.info(
+            "openai namer request model=%s prompts=%s", self._model, prepared_prompts
+        )
 
         payload = {
             "model": self._model,
@@ -61,4 +67,7 @@ class OpenAiClusterNamingProvider(ClusterNamingProvider):
         if not cleaned:
             raise ValueError("empty label after cleanup")
 
+        logger.info(
+            "openai namer response raw=%r cleaned=%s", content, cleaned
+        )
         return cleaned
