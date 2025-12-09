@@ -1,33 +1,25 @@
-import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import type { ReactElement } from "react";
+import { useState } from "react";
+import { ApiError, createSession } from "./api/client";
 import { BottomPlayer } from "./components/BottomPlayer";
 import { ClusterGrid } from "./components/ClusterGrid";
 import { ControlPanel } from "./components/ControlPanel";
 import { MainPanel } from "./components/MainPanel";
 import { ShellLayout } from "./components/ShellLayout";
 import { Sidebar } from "./components/Sidebar";
-import type { BriefParams } from "./types/api";
-import type { ClusterView, ControlPanelState } from "./types/ui";
+import type { BriefParams, CreateSessionRequest } from "./types/api";
+import type { ClusterView, ControlPanelState, SessionState } from "./types/ui";
 
-const mockClusters: ClusterView[] = [
-  {
-    id: "aaaaaaaa-bbbb-cccc-dddd-eeeeffffffff",
-    label: "bright synthwave",
-    tracks: [
-      { id: "t1", audio_url: "/mock1.wav", duration_sec: 5 },
-      { id: "t2", audio_url: "/mock2.wav", duration_sec: 7 },
-    ],
-    source: "initial",
-  },
-  {
-    id: "12345678-1234-5678-9999-abcdefabcdef",
-    label: "dark drones",
-    tracks: [{ id: "t3", audio_url: "/mock3.wav", duration_sec: 4 }],
-    source: "more",
-    parentClusterId: "aaaaaaaa-bbbb-cccc-dddd-eeeeffffffff",
-  },
-];
+export function App(): ReactElement {
+  const [session, setSession] = useState<SessionState>({
+    sessionId: null,
+    clusters: [],
+    status: "idle",
+    loadingClusterId: undefined,
+    errorMessage: undefined,
+  });
 
-export function App(): JSX.Element {
   const [controls, setControls] = useState<ControlPanelState>({
     brief: "",
     numClips: 3,
@@ -35,6 +27,39 @@ export function App(): JSX.Element {
     canGenerate: true,
     loading: false,
     errorMessage: undefined,
+  });
+
+  const createSessionMutation = useMutation({
+    mutationFn: (body: CreateSessionRequest) => createSession(body),
+    onMutate: () => {
+      setSession((prev) => ({ ...prev, status: "loading", errorMessage: undefined }));
+      setControls((prev) => ({ ...prev, loading: true, errorMessage: undefined }));
+    },
+    onSuccess: (data) => {
+      const clusters: ClusterView[] = data.batch.clusters.map((c) => ({
+        id: c.id,
+        label: c.label,
+        tracks: c.tracks,
+        source: "initial",
+      }));
+
+      setSession({
+        sessionId: data.session_id,
+        clusters,
+        status: "idle",
+        loadingClusterId: undefined,
+        errorMessage: undefined,
+      });
+
+      setControls((prev) => ({ ...prev, loading: false }));
+    },
+    onError: (err) => {
+      const message =
+        err instanceof ApiError ? `Request failed (${err.status})` : "Unknown error";
+
+      setSession((prev) => ({ ...prev, status: "error", errorMessage: message }));
+      setControls((prev) => ({ ...prev, loading: false, errorMessage: message }));
+    },
   });
 
   const handleBriefChange = (brief: string) => {
@@ -50,13 +75,13 @@ export function App(): JSX.Element {
     setControls((prev) => ({ ...prev, params }));
   };
 
-  const handleGenerateClick = () => {
-    const payload = {
+  const handleGenerate = () => {
+    const body: CreateSessionRequest = {
       brief: controls.brief,
       num_clips: controls.numClips,
       params: controls.params,
     };
-    console.log("generate payload (stub):", payload);
+    createSessionMutation.mutate(body);
   };
 
   return (
@@ -65,26 +90,30 @@ export function App(): JSX.Element {
         <Sidebar title="Suno Session Lab" items={[{ id: "create", label: "Create" }]} />
       }
       main={
-        <MainPanel>
-          <ControlPanel
-            {...controls}
-            onBriefChange={handleBriefChange}
-            onNumClipsChange={handleNumClipsChange}
-            onParamsChange={handleParamsChange}
-            onGenerate={handleGenerateClick}
-          />
-          <div className="mt-4">
-            <ClusterGrid
-              clusters={mockClusters}
-              sessionId="mock-session"
-              status="idle"
-              loadingClusterId={undefined}
-              numClips={3}
-              onMoreLike={(id) => console.log("moreLike", id)}
-              onTrackSelect={(track, label) => console.log("select", track, label)}
+        <MainPanel
+          controlPanel={
+            <ControlPanel
+              {...controls}
+              onBriefChange={handleBriefChange}
+              onNumClipsChange={handleNumClipsChange}
+              onParamsChange={handleParamsChange}
+              onGenerate={handleGenerate}
             />
-          </div>
-        </MainPanel>
+          }
+          clustersArea={
+            <ClusterGrid
+              clusters={session.clusters}
+              sessionId={session.sessionId}
+              status={session.status}
+              loadingClusterId={session.loadingClusterId}
+              numClips={controls.numClips}
+              onMoreLike={(id) => console.warn("stub", id)}
+              onTrackSelect={(track, label) => console.warn("stub select", track, label)}
+            />
+          }
+          status={session.status}
+          errorMessage={session.errorMessage}
+        />
       }
       bottom={<BottomPlayer />}
     />
