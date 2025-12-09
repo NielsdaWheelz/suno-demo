@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -8,10 +9,36 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.api.sessions import router as sessions_router
-from backend.app.settings import get_settings
+from backend.app.settings import Settings, get_settings
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def _mask(value: str | None) -> str:
+    if not value:
+        return "unset"
+    if len(value) <= 6:
+        return "***"
+    return f"{value[:3]}***{value[-3:]}"
+
+
+def _log_settings(settings: Settings) -> None:
+    logger.info(
+        "settings resolved: media_root=%s music_provider=%s use_fake_namer=%s "
+        "clap_enabled=%s elevenlabs_output_format=%s elevenlabs_api_key=%s",
+        settings.media_root,
+        settings.music_provider,
+        settings.use_fake_namer,
+        settings.clap_enabled,
+        getattr(settings, "elevenlabs_output_format", "unset"),
+        _mask(getattr(settings, "elevenlabs_api_key", None)),
+    )
 
 def _mount_media(app: FastAPI) -> None:
     settings = get_settings()
+    _log_settings(settings)
     settings.media_root.mkdir(parents=True, exist_ok=True)
     app.mount("/media", StaticFiles(directory=settings.media_root), name="media")
 
@@ -35,4 +62,7 @@ async def validation_exception_handler(request, exc):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "media_root": str(get_settings()),
+    }

@@ -5,6 +5,7 @@ from typing import Dict, List
 from uuid import UUID, uuid4
 
 import numpy as np
+import logging
 
 from backend.app.core.clustering import cluster_embeddings
 from backend.app.core.similarity import filter_by_similarity
@@ -16,6 +17,9 @@ from backend.app.services.providers import (
     MusicProvider,
 )
 from backend.app.services.session_store import SessionStore
+
+
+logger = logging.getLogger(__name__)
 
 
 class InvalidRequestError(Exception):
@@ -50,6 +54,16 @@ class SessionService:
         self.max_batch_size = max_batch_size
         self.default_max_k = default_max_k
         self.min_similarity = min_similarity
+        logger.info(
+            "SessionService initialized music=%s embedder=%s namer=%s media_root=%s max_batch_size=%s default_max_k=%s min_similarity=%.2f",
+            type(music).__name__,
+            type(embedder).__name__,
+            type(namer).__name__,
+            media_root,
+            max_batch_size,
+            default_max_k,
+            min_similarity,
+        )
 
     @staticmethod
     def render_prompt(brief: str, params: BriefParams) -> str:
@@ -65,6 +79,12 @@ class SessionService:
 
         session = self.store.create_session(brief, params)
         prompt_text = self.render_prompt(brief, params)
+        logger.info(
+            "create_initial_batch session_id=%s prompt=%s num_clips=%s",
+            session.id,
+            prompt_text,
+            num_clips,
+        )
         clips = self.music.generate_batch(prompt_text, num_clips, params.duration_sec)
         if len(clips) == 0:
             raise GenerationFailedError("no clips generated")
@@ -106,6 +126,13 @@ class SessionService:
             session_id=session.id,
             batch_id=batch_id,
             track_infos=track_infos,
+        )
+        logger.info(
+            "initial batch created session_id=%s batch_id=%s num_tracks=%s num_clusters=%s",
+            session.id,
+            batch_id,
+            len(tracks),
+            len(clusters),
         )
 
         batch = Batch(

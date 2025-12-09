@@ -47,3 +47,14 @@ def test_media_root_env_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     get_settings.cache_clear()
     settings = get_settings()
     assert settings.media_root == tmp_path
+
+
+def test_elevenlabs_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MUSIC_PROVIDER", "elevenlabs")
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "abc123")
+    monkeypatch.setenv("ELEVENLABS_OUTPUT_FORMAT", "pcm_44100")
+    get_settings.cache_clear()
+    settings = get_settings()
+    assert settings.music_provider == "elevenlabs"
+    assert settings.elevenlabs_api_key == "abc123"
+    assert settings.elevenlabs_output_format == "pcm_44100"
