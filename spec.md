@@ -37,14 +37,14 @@ from pydantic import BaseModel, Field
 class BriefParams(BaseModel):
     energy: float = Field(ge=0.0, le=1.0)
     density: float = Field(ge=0.0, le=1.0)
-    duration_sec: float = Field(gt=0.0, le=30.0)
+    duration_sec: float = Field(gt=0.0, le=10.0)
 
 class Track(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     batch_id: UUID
     cluster_id: UUID
     audio_url: str  # "/media/{session_id}/{track_id}.wav"
-    duration_sec: float = Field(gt=0.0, le=30.0)
+    duration_sec: float = Field(gt=0.0, le=10.0)
     raw_prompt: str = Field(min_length=1)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 

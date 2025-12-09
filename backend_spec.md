@@ -29,7 +29,7 @@ class BriefParams(BaseModel):
     energy: float
     density: float
     duration_sec: float
-    """Music control params: 0-1 energy/density, duration <=30s."""
+    """Music control params: 0-1 energy/density, duration <=10s."""
 
 class Track(BaseModel):
     id: UUID

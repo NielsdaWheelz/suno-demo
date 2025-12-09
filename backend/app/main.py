@@ -64,5 +64,5 @@ async def validation_exception_handler(request, exc):
 def health() -> dict[str, str]:
     return {
         "status": "ok",
-        "media_root": str(get_settings()),
+        # "media_root": str(get_settings()),
     }

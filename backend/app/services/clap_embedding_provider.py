@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Tuple
 import wave
+import logging
 
 import numpy as np
 import torch
@@ -10,6 +11,8 @@ import torchaudio
 from transformers import ClapModel, ClapProcessor
 
 from backend.app.services.providers import EmbeddingProvider
+
+logger = logging.getLogger(__name__)
 
 _processor: ClapProcessor | None = None
 _model: ClapModel | None = None
@@ -19,8 +22,10 @@ def _load_model_once(model_name: str = "laion/clap-htsat-unfused") -> Tuple[Clap
     global _processor, _model, _model_dim
 
     if _processor is not None and _model is not None and _model_dim is not None:
+        logger.debug("reusing cached CLAP model %s", model_name)
         return _processor, _model, _model_dim
 
+    logger.info("loading CLAP model %s (may download once)", model_name)
     processor = ClapProcessor.from_pretrained(model_name)
     model = ClapModel.from_pretrained(model_name)
     model.eval()
@@ -36,6 +41,7 @@ def _load_model_once(model_name: str = "laion/clap-htsat-unfused") -> Tuple[Clap
     _processor = processor
     _model = model
     _model_dim = dim
+    logger.info("CLAP model ready dim=%s", dim)
     return _processor, _model, _model_dim
 
 
@@ -51,6 +57,7 @@ class ClapEmbeddingProvider(EmbeddingProvider):
         #   because providers write 16-bit PCM WAV.
         # - if you change music providers to emit other formats/bitrates, add a
         #   decode path here instead of silently ingesting garbage.
+        logger.info("embed_audio start path=%s", audio_path)
         with wave.open(str(audio_path), "rb") as wf:
             sample_rate = wf.getframerate()
             num_channels = wf.getnchannels()
@@ -92,9 +99,21 @@ class ClapEmbeddingProvider(EmbeddingProvider):
             audio_embeds = self._model.get_audio_features(**audio_inputs)
 
         embedding = audio_embeds.squeeze().to(torch.float32).cpu().numpy()
+        logger.info(
+            "embed_audio done path=%s sr=%s channels=%s frames=%s shape=%s mean=%.4f std=%.4f first3=%s",
+            audio_path,
+            sample_rate,
+            num_channels,
+            num_frames,
+            embedding.shape,
+            float(embedding.mean()),
+            float(embedding.std()),
+            np.array2string(embedding[:3], precision=4, floatmode="fixed"),
+        )
         return embedding
 
     def embed_text(self, text: str) -> np.ndarray:
+        logger.info("embed_text start len=%s", len(text))
         text_inputs = self._processor(
             text=[text],
             return_tensors="pt",
@@ -105,4 +124,12 @@ class ClapEmbeddingProvider(EmbeddingProvider):
             text_embeds = self._model.get_text_features(**text_inputs)
 
         embedding = text_embeds.squeeze().to(torch.float32).cpu().numpy()
+        logger.info(
+            "embed_text done len=%s shape=%s mean=%.4f std=%.4f first3=%s",
+            len(text),
+            embedding.shape,
+            float(embedding.mean()),
+            float(embedding.std()),
+            np.array2string(embedding[:3], precision=4, floatmode="fixed"),
+        )
         return embedding

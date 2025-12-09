@@ -86,6 +86,9 @@ class SessionService:
             num_clips,
         )
         clips = self.music.generate_batch(prompt_text, num_clips, params.duration_sec)
+        logger.info(
+            "music provider returned %s clips session_id=%s", len(clips), session.id
+        )
         if len(clips) == 0:
             raise GenerationFailedError("no clips generated")
 
@@ -169,6 +172,12 @@ class SessionService:
 
         prompt_text = self.render_prompt(session.brief_text, session.params)
         clips = self.music.generate_batch(prompt_text, num_clips, session.params.duration_sec)
+        logger.info(
+            "more_like generate session_id=%s cluster_id=%s clips=%s",
+            session_id,
+            cluster_id,
+            len(clips),
+        )
         if len(clips) == 0:
             raise GenerationFailedError("no clips generated")
 
@@ -229,6 +238,9 @@ class SessionService:
     def _prepare_track_infos(self, clips: List[GeneratedClip]) -> List[Dict[str, object]]:
         track_infos: List[Dict[str, object]] = []
         for clip in clips:
+            logger.info(
+                "embedding clip prompt_len=%s path=%s", len(clip.raw_prompt), clip.audio_path
+            )
             embedding = self.embedder.embed_audio(clip.audio_path)
             track_infos.append(
                 {
@@ -257,6 +269,14 @@ class SessionService:
             clip: GeneratedClip = info["clip"]  # type: ignore[assignment]
             final_path = final_dir / f"{track_id}.wav"
             clip.audio_path.rename(final_path)
+            logger.info(
+                "finalized track session_id=%s batch_id=%s track_id=%s cluster_id=%s path=%s",
+                session_id,
+                batch_id,
+                track_id,
+                cluster_id,
+                final_path,
+            )
             track = Track(
                 id=track_id,
                 batch_id=batch_id,

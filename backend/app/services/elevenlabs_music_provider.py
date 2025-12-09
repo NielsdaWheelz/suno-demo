@@ -42,7 +42,13 @@ class ElevenLabsMusicProvider(MusicProvider):
         self, prompt: str, num_clips: int, duration_sec: float
     ) -> List[GeneratedClip]:
         clips: List[GeneratedClip] = []
-        target_duration = duration_sec
+        target_duration = min(duration_sec, 10.0)
+        if target_duration < duration_sec:
+            logger.info(
+                "ElevenLabs clamping requested duration from %.2fs to %.2fs",
+                duration_sec,
+                target_duration,
+            )
         for idx in range(num_clips):
             try:
                 clip = self._generate_single_clip(prompt, target_duration, idx)
@@ -99,6 +105,21 @@ class ElevenLabsMusicProvider(MusicProvider):
             raise GenerationFailedError("ElevenLabs: zero frames")
 
         duration = frame_count / float(self.sample_rate)
+        max_duration = min(target_duration, 10.0)
+        if duration > max_duration:
+            original_duration = duration
+            max_frames = int(self.sample_rate * max_duration)
+            trim_bytes = max_frames * self.sample_width * self.channels
+            audio_bytes = audio_bytes[:trim_bytes]
+            frame_count = max_frames
+            duration = frame_count / float(self.sample_rate)
+            logger.warning(
+                "ElevenLabs clip %s duration overshoot actual=%.3fs target=%.3fs -> trimmed=%.3fs",
+                clip_index,
+                original_duration,
+                target_duration,
+                duration,
+            )
         audio_path = self.tmp_dir / f"{uuid4().hex}.wav"
         with wave.open(str(audio_path), "wb") as wf:
             wf.setnchannels(self.channels)

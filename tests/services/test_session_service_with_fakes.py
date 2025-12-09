@@ -19,8 +19,8 @@ from backend.app.services.session_store import SessionStore
 
 
 BRIEF = "epic cinematic ambience"
-PARAMS = BriefParams(energy=0.7, density=0.3, duration_sec=12.0)
-EXPECTED_PROMPT = "epic cinematic ambience | energy=0.70 | density=0.30 | duration=12.0s"
+PARAMS = BriefParams(energy=0.7, density=0.3, duration_sec=8.0)
+EXPECTED_PROMPT = "epic cinematic ambience | energy=0.70 | density=0.30 | duration=8.0s"
 
 
 class EmptyMusicProvider(MusicProvider):
