@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { ApiError, createSession } from "./api/client";
+import type { CreateSessionResponse } from "./types/api";
 
 vi.mock("./api/client", async () => {
   const actual = await vi.importActual<typeof import("./api/client")>("./api/client");
@@ -29,10 +30,11 @@ describe("App createSession flow", () => {
   });
 
   it("runs successful createSession mutation and renders clusters", async () => {
-    let resolveRequest: ((value: unknown) => void) | undefined;
-    const response = {
+    let resolveRequest: ((value: CreateSessionResponse) => void) | undefined;
+    const response: CreateSessionResponse = {
       session_id: "abc",
       batch: {
+        id: "batch-1",
         clusters: [
           {
             id: "c1",

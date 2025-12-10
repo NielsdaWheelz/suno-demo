@@ -1,11 +1,11 @@
-import React from "react";
+import type { ReactElement } from "react";
 
 export interface SidebarProps {
   title: string;
   items: { id: string; label: string }[];
 }
 
-export function Sidebar(props: SidebarProps): JSX.Element {
+export function Sidebar(props: SidebarProps): ReactElement {
   const { title, items } = props;
 
   return (

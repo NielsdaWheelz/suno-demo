@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { ApiError, createSession, moreLikeCluster } from "./api/client";
+import type { CreateSessionResponse, MoreLikeResponse } from "./types/api";
 
 vi.mock("./api/client", async () => {
   const actual = await vi.importActual<typeof import("./api/client")>("./api/client");
@@ -24,9 +25,10 @@ const renderApp = () =>
     </QueryClientProvider>,
   );
 
-const initialSessionResponse = {
+const initialSessionResponse: CreateSessionResponse = {
   session_id: "session-123",
   batch: {
+    id: "batch-initial-1",
     clusters: [
       {
         id: "cluster-1",
@@ -48,8 +50,8 @@ describe("App more like flow", () => {
   it("appends new cluster from moreLikeCluster success", async () => {
     createSessionMock.mockResolvedValueOnce(initialSessionResponse);
 
-    let resolveMore: ((value: unknown) => void) | undefined;
-    const moreResponse = {
+    let resolveMore: ((value: MoreLikeResponse) => void) | undefined;
+    const moreResponse: MoreLikeResponse = {
       session_id: "session-123",
       parent_cluster_id: "parent-111",
       batch: {

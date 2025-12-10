@@ -34,6 +34,7 @@ describe("App branching behavior", () => {
     createSessionMock.mockResolvedValueOnce({
       session_id: "session-1",
       batch: {
+        id: "batch-1",
         clusters: [
           {
             id: "c1",

@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import React from "react";
 import { NodeGrid } from "../NodeGrid";
 import type { NodeView } from "../../types/ui";
 

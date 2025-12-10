@@ -1,5 +1,5 @@
 // /src/components/TrackTile.tsx
-import type { JSX } from "react";
+import type { ReactElement } from "react";
 import type { TrackOut } from "../types/api";
 import { usePlayer } from "../player/PlayerContext";
 
@@ -8,7 +8,7 @@ export interface TrackTileProps {
   clusterLabel: string;
 }
 
-export function TrackTile(props: TrackTileProps): JSX.Element {
+export function TrackTile(props: TrackTileProps): ReactElement {
   const { track, clusterLabel } = props;
   const { playTrack } = usePlayer();
   const shortId = track.id.slice(0, 8);

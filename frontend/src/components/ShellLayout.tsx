@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactElement } from "react";
 
 export interface ShellLayoutProps {
   sidebar: React.ReactNode;
@@ -6,7 +6,7 @@ export interface ShellLayoutProps {
   bottom: React.ReactNode;
 }
 
-export function ShellLayout(props: ShellLayoutProps): JSX.Element {
+export function ShellLayout(props: ShellLayoutProps): ReactElement {
   const { sidebar, main, bottom } = props;
 
   return (

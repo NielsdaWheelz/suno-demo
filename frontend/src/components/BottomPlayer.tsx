@@ -1,8 +1,8 @@
-import { useEffect, useRef, type JSX } from "react";
+import { useEffect, useRef, type ReactElement } from "react";
 import { resolveApiUrl } from "../api/client";
 import { usePlayer } from "../player/PlayerContext";
 
-export function BottomPlayer(): JSX.Element {
+export function BottomPlayer(): ReactElement {
   const { currentTrack } = usePlayer();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const shortId = currentTrack?.track.id.slice(0, 8);
