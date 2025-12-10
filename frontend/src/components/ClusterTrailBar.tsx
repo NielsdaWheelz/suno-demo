@@ -1,4 +1,5 @@
 import type { ClusterView } from "../types/ui";
+import type { ReactElement } from "react";
 
 export interface ClusterTrailBarProps {
   clusters: ClusterView[];
@@ -23,7 +24,7 @@ function computeTrail(clusters: ClusterView[], activeClusterId?: string): Cluste
   return trail.reverse();
 }
 
-export function ClusterTrailBar(props: ClusterTrailBarProps): JSX.Element {
+export function ClusterTrailBar(props: ClusterTrailBarProps): ReactElement {
   const { clusters, activeClusterId, onSelectCluster } = props;
   const trail = computeTrail(clusters, activeClusterId);
 

@@ -1,8 +1,8 @@
 // /src/components/ClusterGrid.tsx
-import React from "react";
 import type { ClusterView, SessionStatus } from "../types/ui";
 import { computeTrail } from "./ClusterTrailBar";
 import { ClusterCard } from "./ClusterCard";
+import type { ReactElement } from "react";
 
 export interface ClusterGridProps {
   clusters: ClusterView[];
@@ -15,7 +15,7 @@ export interface ClusterGridProps {
   onSelectCluster: (clusterId: string) => void;
 }
 
-export function ClusterGrid(props: ClusterGridProps): JSX.Element {
+export function ClusterGrid(props: ClusterGridProps): ReactElement {
   const {
     clusters,
     sessionId,

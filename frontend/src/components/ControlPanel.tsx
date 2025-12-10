@@ -1,4 +1,4 @@
-import React from "react";
+import type { ChangeEvent, ReactElement } from "react";
 import type { BriefParams } from "../types/api";
 import type { ControlPanelState } from "../types/ui";
 
@@ -8,7 +8,7 @@ export interface ControlPanelProps extends ControlPanelState {
   onGenerate: () => void;
 }
 
-export function ControlPanel(props: ControlPanelProps): JSX.Element {
+export function ControlPanel(props: ControlPanelProps): ReactElement {
   const {
     brief,
     params,
@@ -20,12 +20,12 @@ export function ControlPanel(props: ControlPanelProps): JSX.Element {
     onGenerate,
   } = props;
 
-  const handleBriefChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleBriefChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onBriefChange(event.target.value);
   };
 
   const handleParamChange =
-    (key: keyof BriefParams) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    (key: keyof BriefParams) => (event: ChangeEvent<HTMLInputElement>) => {
       const parsed = Number(event.target.value);
       onParamsChange({ ...params, [key]: parsed });
     };

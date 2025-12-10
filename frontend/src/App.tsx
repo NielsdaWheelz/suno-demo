@@ -71,7 +71,7 @@ function AppContent(): ReactElement {
     mutationFn: ({
       sessionId,
       clusterId,
-      nodeId,
+      nodeId: _nodeId,
     }: { sessionId: string; clusterId: string; nodeId: string }) =>
       moreLikeCluster(sessionId, clusterId, { num_clips: NUM_CLIPS }),
     onMutate: () => {

@@ -1,5 +1,5 @@
 // /src/components/ClusterCard.tsx
-import React from "react";
+import type { ReactElement } from "react";
 import type { ClusterView } from "../types/ui";
 import { TrackTile } from "./TrackTile";
 
@@ -12,7 +12,7 @@ export interface ClusterCardProps {
   onSelectCluster: (clusterId: string) => void;
 }
 
-export function ClusterCard(props: ClusterCardProps): JSX.Element {
+export function ClusterCard(props: ClusterCardProps): ReactElement {
   const { cluster, disabled, isOnTrail, isActive, onMoreLike, onSelectCluster } = props;
   const parentLabel = cluster.parentClusterId
     ? `from ${cluster.parentClusterId.slice(0, 8)}`

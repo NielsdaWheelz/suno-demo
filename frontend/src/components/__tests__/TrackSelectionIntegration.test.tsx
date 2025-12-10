@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import type { JSX } from "react";
+import type { ReactElement } from "react";
 import { BottomPlayer } from "../BottomPlayer";
 import { NodeGrid } from "../NodeGrid";
 import { PlayerProvider, usePlayer } from "../../player/PlayerContext";
@@ -34,7 +34,7 @@ afterEach(() => {
   playMock.mockClear();
 });
 
-function GridHarness(): JSX.Element {
+function GridHarness(): ReactElement {
   const { playTrack } = usePlayer();
   return (
     <>
@@ -50,7 +50,7 @@ function GridHarness(): JSX.Element {
   );
 }
 
-function TestHarness(): JSX.Element {
+function TestHarness(): ReactElement {
   return (
     <PlayerProvider>
       <GridHarness />

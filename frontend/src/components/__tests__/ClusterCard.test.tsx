@@ -22,7 +22,14 @@ describe("ClusterCard", () => {
   it("renders label and source tag", () => {
     render(
       <PlayerProvider>
-        <ClusterCard cluster={baseCluster} disabled={false} onMoreLike={vi.fn()} />
+        <ClusterCard
+          cluster={baseCluster}
+          disabled={false}
+          isOnTrail={false}
+          isActive={false}
+          onMoreLike={vi.fn()}
+          onSelectCluster={vi.fn()}
+        />
       </PlayerProvider>,
     );
 
@@ -38,7 +45,14 @@ describe("ClusterCard", () => {
 
     render(
       <PlayerProvider>
-        <ClusterCard cluster={clusterWithParent} disabled={false} onMoreLike={vi.fn()} />
+        <ClusterCard
+          cluster={clusterWithParent}
+          disabled={false}
+          isOnTrail={false}
+          isActive={false}
+          onMoreLike={vi.fn()}
+          onSelectCluster={vi.fn()}
+        />
       </PlayerProvider>,
     );
 
@@ -50,7 +64,14 @@ describe("ClusterCard", () => {
 
     render(
       <PlayerProvider>
-        <ClusterCard cluster={baseCluster} disabled={false} onMoreLike={onMoreLike} />
+        <ClusterCard
+          cluster={baseCluster}
+          disabled={false}
+          isOnTrail={false}
+          isActive={false}
+          onMoreLike={onMoreLike}
+          onSelectCluster={vi.fn()}
+        />
       </PlayerProvider>,
     );
 
@@ -65,7 +86,14 @@ describe("ClusterCard", () => {
 
     render(
       <PlayerProvider>
-        <ClusterCard cluster={baseCluster} disabled={true} onMoreLike={onMoreLike} />
+        <ClusterCard
+          cluster={baseCluster}
+          disabled={true}
+          isOnTrail={false}
+          isActive={false}
+          onMoreLike={onMoreLike}
+          onSelectCluster={vi.fn()}
+        />
       </PlayerProvider>,
     );
 
@@ -77,7 +105,14 @@ describe("ClusterCard", () => {
   it("renders one TrackTile per track", () => {
     render(
       <PlayerProvider>
-        <ClusterCard cluster={baseCluster} disabled={false} onMoreLike={vi.fn()} />
+        <ClusterCard
+          cluster={baseCluster}
+          disabled={false}
+          isOnTrail={false}
+          isActive={false}
+          onMoreLike={vi.fn()}
+          onSelectCluster={vi.fn()}
+        />
       </PlayerProvider>,
     );
 
