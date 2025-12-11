@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import List, Optional
 from uuid import uuid4
 
+import numpy as np
 import requests
 
 from suno_backend.app.services.providers import GeneratedClip, MusicProvider
@@ -24,6 +25,7 @@ class ElevenLabsMusicProvider(MusicProvider):
         api_key: str,
         output_format: str = "pcm_44100",
         timeout_seconds: float = 90.0,
+        target_peak: float = 0.98,
     ) -> None:
         self.media_root = media_root
         self.output_format = output_format
@@ -31,6 +33,7 @@ class ElevenLabsMusicProvider(MusicProvider):
         self.channels = 1
         self.sample_width = 2  # bytes
         self.timeout_seconds = timeout_seconds
+        self.target_peak = target_peak
         self.tmp_dir = self.media_root / "tmp"
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -141,6 +144,7 @@ class ElevenLabsMusicProvider(MusicProvider):
                 target_duration,
                 duration,
             )
+        audio_bytes = self._peak_normalize(audio_bytes)
         audio_path = self.tmp_dir / f"{uuid4().hex}.wav"
         with wave.open(str(audio_path), "wb") as wf:
             wf.setnchannels(self.channels)
@@ -200,3 +204,26 @@ class ElevenLabsMusicProvider(MusicProvider):
             return int(output_format.split("_", maxsplit=1)[1])
         except Exception as exc:
             raise ValueError(f"Invalid PCM output_format '{output_format}'") from exc
+
+    def _peak_normalize(self, audio_bytes: bytes) -> bytes:
+        """Peak-normalize 16-bit PCM mono frames to target_peak with hard clipping."""
+        if self.sample_width != 2 or self.channels != 1:
+            return audio_bytes
+        if not audio_bytes:
+            return audio_bytes
+        pcm = np.frombuffer(audio_bytes, dtype=np.int16)
+        if pcm.size == 0:
+            return audio_bytes
+        max_abs = np.abs(pcm.astype(np.int32)).max()
+        if max_abs == 0:
+            return audio_bytes
+        target_val = int(self.target_peak * 32767)
+        if target_val <= 0:
+            return audio_bytes
+        gain = target_val / float(max_abs)
+        if gain <= 0:
+            return audio_bytes
+        normalized = np.clip(np.rint(pcm.astype(np.float32) * gain), -32768, 32767).astype(
+            np.int16
+        )
+        return normalized.tobytes()
