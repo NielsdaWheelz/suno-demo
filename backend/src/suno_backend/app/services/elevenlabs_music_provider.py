@@ -73,7 +73,7 @@ class ElevenLabsMusicProvider(MusicProvider):
         params = {"output_format": self.output_format}
         payload = {
             "prompt": prompt,
-            "music_length_ms": int(duration_sec * 1000),
+            "music_length_ms": int(duration_sec * 500),
             "model_id": "music_v1",
             "force_instrumental": self.force_instrumental,
         }
@@ -125,6 +125,13 @@ class ElevenLabsMusicProvider(MusicProvider):
 
         duration = frame_count / float(self.sample_rate)
         audio_bytes = self._peak_normalize(audio_bytes)
+
+        try:
+            self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            logger.exception("ElevenLabs failed to ensure tmp dir exists: %s", self.tmp_dir)
+            raise GenerationFailedError("ElevenLabs: unable to prepare tmp dir for audio")
+
         audio_path = self.tmp_dir / f"{uuid4().hex}.wav"
         with wave.open(str(audio_path), "wb") as wf:
             wf.setnchannels(self.channels)
