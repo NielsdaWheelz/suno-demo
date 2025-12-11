@@ -10,7 +10,9 @@ from pydantic import BaseModel, Field
 class BriefParams(BaseModel):
     energy: float = Field(ge=0.0, le=1.0)
     density: float = Field(ge=0.0, le=1.0)
-    duration_sec: float = Field(gt=0.0, le=10.0)
+    duration_sec: float = Field(gt=0.0)
+    tempo_bpm: float = Field(default=120.0, gt=0.0)
+    brightness: float = Field(default=0.5, ge=0.0, le=1.0)
 
 
 class Track(BaseModel):
@@ -18,7 +20,7 @@ class Track(BaseModel):
     batch_id: UUID
     cluster_id: UUID
     audio_url: str  # "/media/{session_id}/{track_id}.wav"
-    duration_sec: float = Field(gt=0.0, le=10.0)
+    duration_sec: float = Field(gt=0.0)
     raw_prompt: str = Field(min_length=1)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 

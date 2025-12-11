@@ -67,7 +67,11 @@ class SessionService:
 
     @staticmethod
     def render_prompt(brief: str, params: BriefParams) -> str:
-        return f"{brief} | energy={params.energy:.2f} | density={params.density:.2f} | duration={params.duration_sec:.1f}s"
+        return (
+            f"{brief} | energy={params.energy:.2f} | density={params.density:.2f} | "
+            f"duration={params.duration_sec:.1f}s | tempo={params.tempo_bpm:.0f}bpm | "
+            f"brightness={params.brightness:.2f}"
+        )
 
     def create_initial_batch(
         self,

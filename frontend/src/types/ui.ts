@@ -35,9 +35,12 @@ export type ControlPanelState = {
   params: {
     energy: number; // 0..1
     density: number; // 0..1
-    duration_sec: number; // 1..10 in UI, but backend accepts up to 30
+    duration_sec: number; // UI may cap for ergonomics; backend uncapped
+    tempo_bpm: number; // >0
+    brightness: number; // 0..1
   };
   canGenerate: boolean;
   loading: boolean;
   errorMessage?: string;
+  forceInstrumental: boolean;
 };

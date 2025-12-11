@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import logging
 import wave
 from pathlib import Path
 from typing import List
 from uuid import UUID
-import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
-from suno_backend.app.api.deps import get_session_service
+from suno_backend.app.api.deps import get_music_provider, get_session_service
 from suno_backend.app.models.api import (
     BatchOut,
     ClusterOut,
@@ -16,6 +16,7 @@ from suno_backend.app.models.api import (
     CreateSessionResponse,
     MoreLikeRequest,
     MoreLikeResponse,
+    MusicSettingsUpdate,
     TrackOut,
 )
 from suno_backend.app.services.session_service import (
@@ -24,6 +25,8 @@ from suno_backend.app.services.session_service import (
     NotFoundError,
     SessionService,
 )
+from suno_backend.app.media_utils import clear_media_root
+from suno_backend.app.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -139,3 +142,27 @@ def more_like_endpoint(
     return MoreLikeResponse(
         session_id=session_id, parent_cluster_id=cluster_id, batch=batch_out
     )
+
+
+@router.delete("/media-cache", status_code=204)
+def clear_media_endpoint(
+    settings=Depends(get_settings),
+):
+    clear_media_root(settings.media_root)
+    return Response(status_code=204)
+
+
+@router.post("/music/settings", status_code=204)
+def update_music_settings(
+    body: MusicSettingsUpdate,
+    service: SessionService = Depends(get_session_service),
+    music = Depends(get_music_provider),
+):
+    if hasattr(music, "force_instrumental"):
+        setattr(music, "force_instrumental", body.force_instrumental)
+    logger.info(
+        "music settings updated force_instrumental=%s media_root=%s",
+        body.force_instrumental,
+        service.media_root,
+    )
+    return Response(status_code=204)

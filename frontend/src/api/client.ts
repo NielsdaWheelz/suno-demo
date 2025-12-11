@@ -2,6 +2,7 @@ import type {
   CreateSessionRequest,
   CreateSessionResponse,
   MoreLikeResponse,
+  MusicSettingsUpdate,
 } from "../types/api";
 
 export class ApiError extends Error {
@@ -72,4 +73,29 @@ export async function moreLikeCluster(
   }
 
   return (await res.json()) as MoreLikeResponse;
+}
+
+export async function clearMediaCache(): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/media-cache`, { method: "DELETE" });
+  if (!res.ok) {
+    throw new ApiError("clearMediaCache failed", res.status);
+  }
+}
+
+export async function updateMusicSettings(body: MusicSettingsUpdate): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/music/settings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    let parsed: unknown;
+    try {
+      parsed = await res.json();
+    } catch {
+      parsed = undefined;
+    }
+    throw new ApiError("updateMusicSettings failed", res.status, parsed);
+  }
 }

@@ -23,9 +23,10 @@ class ElevenLabsMusicProvider(MusicProvider):
         self,
         media_root: Path,
         api_key: str,
-        output_format: str = "pcm_44100",
+        output_format: str = "pcm_48000",
         timeout_seconds: float = 90.0,
         target_peak: float = 0.98,
+        force_instrumental: bool = True,
     ) -> None:
         self.media_root = media_root
         self.output_format = output_format
@@ -34,6 +35,7 @@ class ElevenLabsMusicProvider(MusicProvider):
         self.sample_width = 2  # bytes
         self.timeout_seconds = timeout_seconds
         self.target_peak = target_peak
+        self.force_instrumental = force_instrumental
         self.tmp_dir = self.media_root / "tmp"
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -45,16 +47,9 @@ class ElevenLabsMusicProvider(MusicProvider):
         self, prompt: str, num_clips: int, duration_sec: float
     ) -> List[GeneratedClip]:
         clips: List[GeneratedClip] = []
-        target_duration = min(duration_sec, 10.0)
-        if target_duration < duration_sec:
-            logger.info(
-                "ElevenLabs clamping requested duration from %.2fs to %.2fs",
-                duration_sec,
-                target_duration,
-            )
         for idx in range(num_clips):
             try:
-                clip = self._generate_single_clip(prompt, target_duration, idx)
+                clip = self._generate_single_clip(prompt, duration_sec, idx)
             except InvalidRequestError:
                 # propagate prompt violations immediately so caller can surface a 400
                 raise
@@ -72,22 +67,22 @@ class ElevenLabsMusicProvider(MusicProvider):
         return clips
 
     def _generate_single_clip(
-        self, prompt: str, target_duration: float, clip_index: int
+        self, prompt: str, duration_sec: float, clip_index: int
     ) -> Optional[GeneratedClip]:
         url = "https://api.elevenlabs.io/v1/music/detailed"
         params = {"output_format": self.output_format}
         payload = {
             "prompt": prompt,
-            "music_length_ms": int(target_duration * 500),
+            "music_length_ms": int(duration_sec * 1000),
             "model_id": "music_v1",
-            "force_instrumental": True,
+            "force_instrumental": self.force_instrumental,
         }
         headers = {"xi-api-key": self.api_key, "Content-Type": "application/json"}
 
         logger.info(
             "ElevenLabs request clip=%s duration=%.2fs format=%s",
             clip_index,
-            target_duration,
+            duration_sec,
             self.output_format,
         )
         resp = requests.post(
@@ -129,21 +124,6 @@ class ElevenLabsMusicProvider(MusicProvider):
             raise GenerationFailedError("ElevenLabs: zero frames")
 
         duration = frame_count / float(self.sample_rate)
-        max_duration = min(target_duration, 10.0)
-        if duration > max_duration:
-            original_duration = duration
-            max_frames = int(self.sample_rate * max_duration)
-            trim_bytes = max_frames * self.sample_width * self.channels
-            audio_bytes = audio_bytes[:trim_bytes]
-            frame_count = max_frames
-            duration = frame_count / float(self.sample_rate)
-            logger.warning(
-                "ElevenLabs clip %s duration overshoot actual=%.3fs target=%.3fs -> trimmed=%.3fs",
-                clip_index,
-                original_duration,
-                target_duration,
-                duration,
-            )
         audio_bytes = self._peak_normalize(audio_bytes)
         audio_path = self.tmp_dir / f"{uuid4().hex}.wav"
         with wave.open(str(audio_path), "wb") as wf:

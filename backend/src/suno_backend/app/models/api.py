@@ -44,3 +44,7 @@ class MoreLikeResponse(BaseModel):
     session_id: UUID
     parent_cluster_id: UUID
     batch: BatchOut
+
+
+class MusicSettingsUpdate(BaseModel):
+    force_instrumental: bool
