@@ -4,13 +4,21 @@ import { ControlPanel, type ControlPanelProps } from "../ControlPanel";
 
 const makeProps = (overrides: Partial<ControlPanelProps> = {}): ControlPanelProps => ({
   brief: "lofi beats",
-  params: { energy: 0.3, density: 0.4, duration_sec: 6 },
+  params: {
+    energy: 0.3,
+    density: 0.4,
+    duration_sec: 6,
+    tempo_bpm: 118,
+    brightness: 0.45,
+  },
   canGenerate: true,
   loading: false,
   errorMessage: undefined,
   onBriefChange: vi.fn(),
   onParamsChange: vi.fn(),
   onGenerate: vi.fn(),
+  forceInstrumental: true,
+  onForceInstrumentalChange: vi.fn(),
   ...overrides,
 });
 

@@ -28,7 +28,13 @@ describe("createSession", () => {
     const body: CreateSessionRequest = {
       brief: "A dark synthwave track",
       num_clips: 3,
-      params: { energy: 0.8, density: 0.6, duration_sec: 8 },
+      params: {
+        energy: 0.8,
+        density: 0.6,
+        duration_sec: 8,
+        tempo_bpm: 120,
+        brightness: 0.6,
+      },
     };
 
     const { createSession } = await loadClient();
@@ -56,7 +62,13 @@ describe("createSession", () => {
     const body: CreateSessionRequest = {
       brief: "Test",
       num_clips: 1,
-      params: { energy: 0.2, density: 0.3, duration_sec: 5 },
+      params: {
+        energy: 0.2,
+        density: 0.3,
+        duration_sec: 5,
+        tempo_bpm: 100,
+        brightness: 0.4,
+      },
     };
 
     const { createSession, ApiError } = await loadClient();

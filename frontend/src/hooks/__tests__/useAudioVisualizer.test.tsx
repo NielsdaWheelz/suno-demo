@@ -1,5 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import type { Mock } from "vitest";
 import { useRef } from "react";
 import { useAudioVisualizer } from "../useAudioVisualizer";
 
@@ -21,19 +22,25 @@ class FakeAnalyserNode {
 }
 
 class FakeMediaElementSourceNode {
-  constructor(public element: HTMLMediaElement) {}
+  element: HTMLMediaElement;
+
+  constructor(element: HTMLMediaElement) {
+    this.element = element;
+  }
   connect = vi.fn();
   disconnect = vi.fn();
 }
 
 describe("useAudioVisualizer", () => {
-  let createAnalyserMock: ReturnType<typeof vi.fn>;
-  let createMediaElementSourceMock: ReturnType<typeof vi.fn>;
-  let audioContextConstructorMock: ReturnType<typeof vi.fn>;
+  let createAnalyserMock: Mock<() => FakeAnalyserNode>;
+  let createMediaElementSourceMock: Mock<
+    (element: HTMLMediaElement) => FakeMediaElementSourceNode
+  >;
+  let audioContextConstructorMock: Mock<() => void>;
   let requestAnimationFrameSpy: ReturnType<typeof vi.spyOn>;
   let cancelAnimationFrameSpy: ReturnType<typeof vi.spyOn>;
   let getContextSpy: ReturnType<typeof vi.spyOn>;
-  let resumeMock: ReturnType<typeof vi.fn>;
+  let resumeMock: Mock<() => Promise<void>>;
   let pauseSpy: ReturnType<typeof vi.spyOn>;
   let loadSpy: ReturnType<typeof vi.spyOn>;
 
