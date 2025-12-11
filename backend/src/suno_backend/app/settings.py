@@ -60,9 +60,15 @@ class Settings(BaseSettings):
         ),
     )
     elevenlabs_output_format: str = Field(
-        default="pcm_44100",
+        default="pcm_48000",
         validation_alias=AliasChoices(
             "ELEVENLABS_OUTPUT_FORMAT", "suno_lab_elevenlabs_output_format"
+        ),
+    )
+    elevenlabs_force_instrumental: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "ELEVENLABS_FORCE_INSTRUMENTAL", "suno_lab_elevenlabs_force_instrumental"
         ),
     )
     clap_enabled: bool = Field(default=False)

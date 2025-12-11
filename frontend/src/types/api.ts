@@ -1,7 +1,9 @@
 export type BriefParams = {
   energy: number; // 0..1
   density: number; // 0..1
-  duration_sec: number; // 0 < duration_sec <= 30 (frontend will normally use 1..10)
+  duration_sec: number; // >0, UI default range but backend uncapped
+  tempo_bpm: number; // >0
+  brightness: number; // 0..1
 };
 
 export interface CreateSessionRequest {
@@ -36,4 +38,8 @@ export interface MoreLikeResponse {
   session_id: string;
   parent_cluster_id: string;
   batch: BatchOut;
+}
+
+export interface MusicSettingsUpdate {
+  force_instrumental: boolean;
 }

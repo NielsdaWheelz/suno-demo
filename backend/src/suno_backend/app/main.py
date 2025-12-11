@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from suno_backend.app.api.sessions import router as sessions_router
+from suno_backend.app.media_utils import clear_media_root
 from suno_backend.app.settings import Settings, get_settings
 
 
@@ -29,13 +30,14 @@ def _log_settings(settings: Settings) -> None:
     logger.info(
         "settings resolved: media_root=%s cors_allow_origins=%s "
         "music_provider=%s use_fake_namer=%s clap_enabled=%s "
-        "elevenlabs_output_format=%s elevenlabs_api_key=%s",
+        "elevenlabs_output_format=%s elevenlabs_force_instrumental=%s elevenlabs_api_key=%s",
         settings.media_root,
         settings.cors_allow_origins,
         settings.music_provider,
         settings.use_fake_namer,
         settings.clap_enabled,
         getattr(settings, "elevenlabs_output_format", "unset"),
+        getattr(settings, "elevenlabs_force_instrumental", "unset"),
         _mask(getattr(settings, "elevenlabs_api_key", None)),
     )
 
@@ -49,7 +51,7 @@ def _mount_media(app: FastAPI) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    settings.media_root.mkdir(parents=True, exist_ok=True)
+    clear_media_root(settings.media_root)
     yield
 
 

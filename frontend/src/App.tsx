@@ -1,7 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
 import type { ReactElement } from "react";
-import { useState } from "react";
-import { ApiError, createSession, moreLikeCluster } from "./api/client";
+import { useEffect, useState } from "react";
+import {
+  ApiError,
+  clearMediaCache,
+  createSession,
+  moreLikeCluster,
+  updateMusicSettings,
+} from "./api/client";
 import { BottomPlayer } from "./components/BottomPlayer";
 import { ControlPanel } from "./components/ControlPanel";
 import { MainPanel } from "./components/MainPanel";
@@ -28,10 +34,11 @@ function AppContent(): ReactElement {
 
   const [controls, setControls] = useState<ControlPanelState>({
     brief: "",
-    params: { energy: 0.5, density: 0.5, duration_sec: 8 },
+    params: { energy: 0.5, density: 0.5, duration_sec: 8, tempo_bpm: 120, brightness: 0.5 },
     canGenerate: true,
     loading: false,
     errorMessage: undefined,
+    forceInstrumental: true,
   });
 
   const createSessionMutation = useMutation({
@@ -112,12 +119,32 @@ function AppContent(): ReactElement {
     },
   });
 
+  useEffect(() => {
+    clearMediaCache().catch(() => {
+      setControls((prev) => ({
+        ...prev,
+        errorMessage: prev.errorMessage ?? "Failed to clear media cache",
+      }));
+    });
+    // no cleanup call to avoid dev reload loops
+  }, []);
+
   const handleBriefChange = (brief: string) => {
     setControls((prev) => ({ ...prev, brief }));
   };
 
   const handleParamsChange = (params: BriefParams) => {
     setControls((prev) => ({ ...prev, params }));
+  };
+
+  const handleForceInstrumentalChange = (value: boolean) => {
+    setControls((prev) => ({ ...prev, forceInstrumental: value }));
+    updateMusicSettings({ force_instrumental: value }).catch(() => {
+      setControls((prev) => ({
+        ...prev,
+        errorMessage: "Failed to update music settings",
+      }));
+    });
   };
 
   const handleGenerate = () => {
@@ -157,6 +184,7 @@ function AppContent(): ReactElement {
               onBriefChange={handleBriefChange}
               onParamsChange={handleParamsChange}
               onGenerate={handleGenerate}
+              onForceInstrumentalChange={handleForceInstrumentalChange}
             />
           }
           right={

@@ -48,6 +48,7 @@ def get_music_provider() -> MusicProvider:
                 media_root=settings.media_root,
                 api_key=settings.elevenlabs_api_key,
                 output_format=settings.elevenlabs_output_format,
+                force_instrumental=settings.elevenlabs_force_instrumental,
             )
         else:
             raise ValueError(f"unsupported music_provider '{settings.music_provider}'")

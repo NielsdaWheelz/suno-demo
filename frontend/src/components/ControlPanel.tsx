@@ -6,6 +6,7 @@ export interface ControlPanelProps extends ControlPanelState {
   onBriefChange: (v: string) => void;
   onParamsChange: (p: BriefParams) => void;
   onGenerate: () => void;
+  onForceInstrumentalChange: (v: boolean) => void;
 }
 
 export function ControlPanel(props: ControlPanelProps): ReactElement {
@@ -18,6 +19,8 @@ export function ControlPanel(props: ControlPanelProps): ReactElement {
     onBriefChange,
     onParamsChange,
     onGenerate,
+    forceInstrumental,
+    onForceInstrumentalChange,
   } = props;
 
   const handleBriefChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -29,6 +32,10 @@ export function ControlPanel(props: ControlPanelProps): ReactElement {
       const parsed = Number(event.target.value);
       onParamsChange({ ...params, [key]: parsed });
     };
+
+  const handleForceInstrumentalChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onForceInstrumentalChange(event.target.checked);
+  };
 
   const disabled = loading || !canGenerate;
 
@@ -102,14 +109,49 @@ export function ControlPanel(props: ControlPanelProps): ReactElement {
                 id="duration-slider"
                 type="range"
                 min={1}
-                max={10}
+                max={60}
                 step={0.5}
                 value={params.duration_sec}
                 onChange={handleParamChange("duration_sec")}
                 className="w-full accent-sky-500"
               />
             </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm font-medium text-slate-200">
+                <label htmlFor="tempo-slider">tempo (bpm)</label>
+                <span className="text-slate-400">{params.tempo_bpm.toFixed(0)}</span>
+              </div>
+              <input
+                id="tempo-slider"
+                type="range"
+                min={60}
+                max={180}
+                step={1}
+                value={params.tempo_bpm}
+                onChange={handleParamChange("tempo_bpm")}
+                className="w-full accent-sky-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm font-medium text-slate-200">
+                <label htmlFor="brightness-slider">brightness</label>
+                <span className="text-slate-400">{params.brightness.toFixed(2)}</span>
+              </div>
+              <input
+                id="brightness-slider"
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={params.brightness}
+                onChange={handleParamChange("brightness")}
+                className="w-full accent-sky-500"
+              />
+            </div>
           </div>
+
         </div>
 
         {errorMessage ? (
@@ -121,7 +163,17 @@ export function ControlPanel(props: ControlPanelProps): ReactElement {
           </div>
         ) : null}
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between gap-4">
+          <label className="flex items-center gap-2 text-sm text-slate-200" htmlFor="force-instrumental">
+            <input
+              id="force-instrumental"
+              type="checkbox"
+              checked={forceInstrumental}
+              onChange={handleForceInstrumentalChange}
+              className="h-4 w-4 accent-sky-500"
+            />
+            instrumental only
+          </label>
           <button
             type="button"
             className="inline-flex items-center justify-center gap-2 rounded-md bg-sky-600 px-3 py-2 text-sm font-medium transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
