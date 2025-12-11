@@ -6,7 +6,7 @@ backend-only notes. frontend docs live in `frontend/README.md`.
 - fastapi app that takes a text brief + control params, generates short music clips, embeds + clusters them, and serves static wavs from disk.
 - state is in-memory only (session store + centroids); restart wipes sessions.
 - media is written under `media/{session_id}/{track_id}.wav` and mounted at `/media/*`.
-- two blocking endpoints: create session (`POST /sessions`) and generate “more like this cluster” (`POST /sessions/{session_id}/clusters/{cluster_id}/more`). plus `/health`.
+- two blocking endpoints: create session (`POST /sessions`) and generate “more like this cluster” (`POST /sessions/{session_id}/clusters/{cluster_id}/more`). plus `/health`, `/media-cache` (dev-only clear), `/music/settings` (currently force_instrumental toggle).
 
 ### core flow (suno_backend/app)
 - `main.py` wires fastapi, mounts `/media`, includes the sessions router, and logs settings.
@@ -19,8 +19,10 @@ backend-only notes. frontend docs live in `frontend/README.md`.
 - provider impls: fake music/embedding/namer; optional ElevenLabs music; optional OpenAI cluster naming; optional CLAP embeddings.
 
 ### api surface (simplified)
-- `POST /sessions` — body: `{"brief": str, "num_clips": int (1-6), "params": {"energy": 0-1, "density": 0-1, "duration_sec": >0 to 10}}`. returns `{session_id, batch:{id, clusters:[{id, label, tracks:[{id, audio_url, duration_sec}]}]}}`.
-- `POST /sessions/{session_id}/clusters/{cluster_id}/more` — body: `{"num_clips": int}`; returns `{session_id, parent_cluster_id, batch}`. label is inherited; tracks filtered by similarity threshold.
+- `POST /sessions` — body: `{"brief": str, "num_clips": int (1-6), "params": {"energy": 0-1, "density": 0-1, "duration_sec": >0, "tempo_bpm": >0, "brightness": 0-1}}`. returns `{session_id, batch:{id, clusters:[{id, label, tracks:[{id, audio_url, duration_sec}]}]}}`.
+- `POST /sessions/{session_id}/clusters/{cluster_id}/more` — body: `{"num_clips": int}`; returns `{session_id, parent_cluster_id, batch}`. label is inherited; new tracks are generated then filtered by cosine similarity to the parent centroid (falls back to top-N if threshold misses).
+- `DELETE /media-cache` — clears media directory (dev convenience).
+- `POST /music/settings` — currently supports `{"force_instrumental": bool}` for providers that expose it.
 - `GET /health` — `{status:"ok"}`.
 
 ### configuration (env-driven; prefix `SUNO_LAB_`)
@@ -30,16 +32,16 @@ backend-only notes. frontend docs live in `frontend/README.md`.
 - `MIN_SIMILARITY` default `0.3` (filter threshold for “more like”).
 - `CORS_ALLOW_ORIGINS` comma-separated origins (default `http://localhost:5173,http://127.0.0.1:5173`).
 - `MUSIC_PROVIDER` default `fake`; choices: `fake`, `elevenlabs`.
-- `ELEVENLABS_API_KEY` (or `xi_api_key`) and `ELEVENLABS_OUTPUT_FORMAT` (default `pcm_44100`) when using ElevenLabs.
+- `ELEVENLABS_API_KEY` (or `xi_api_key`) and `ELEVENLABS_OUTPUT_FORMAT` (default `pcm_48000`) and `ELEVENLABS_FORCE_INSTRUMENTAL` (default `true`) when using ElevenLabs.
 - `CLAP_ENABLED` default `false`; `CLAP_MODEL_NAME` default `laion/clap-htsat-unfused`.
 - `OPENAI_API_KEY` optional; used when `use_fake_namer` is false. `USE_FAKE_NAMER` default `false`.
 - legacy aliases (`MUSIC_PROVIDER`, `ELEVENLABS_API_KEY`, etc.) are accepted via `AliasChoices`.
 
 ### providers and behavior
 - fake stack (defaults): `FakeMusicProvider` writes silent wavs to `media/tmp`; `FakeEmbeddingProvider` hashes path/text into deterministic vectors; `FakeClusterNamingProvider` deterministic 1–3 word labels.
-- `ElevenLabsMusicProvider`: hits `https://api.elevenlabs.io/v1/music/detailed`, writes wavs, trims >10s, raises if all clips fail.
+- `ElevenLabsMusicProvider`: hits `https://api.elevenlabs.io/v1/music/detailed`, writes wavs, peak-normalizes, honors `force_instrumental`, raises if all clips fail.
 - `ClapEmbeddingProvider`: loads `laion/clap-htsat-unfused` once via transformers/torch/torchaudio; expects 16-bit PCM wavs; rescales to 48 kHz mono internally.
-- `OpenAiClusterNamingProvider`: calls chat completions (`gpt-4o-mini`), enforces ASCII 1–3 words; service falls back to `cluster-{i}` on failure.
+- `OpenAiClusterNamingProvider`: calls chat completions (`gpt-4o-mini`), enforces ASCII ≤3 words; service falls back to `cluster-{i}` on failure.
 
 ### running locally
 ```bash
@@ -51,12 +53,13 @@ export SUNO_LAB_MUSIC_PROVIDER=fake  # default
 uvicorn suno_backend.app.main:app --app-dir src --reload
 ```
 server listens on `http://127.0.0.1:8000`; media served from `/media/...`.
+media is cleared on startup (see `lifespan` in `main.py`); the frontend also calls `DELETE /media-cache` on mount in dev.
 
 ### quick curl smoke test (fakes)
 ```bash
 curl -s -X POST http://127.0.0.1:8000/sessions \
   -H "content-type: application/json" \
-  -d '{"brief":"warm pads","num_clips":2,"params":{"energy":0.6,"density":0.4,"duration_sec":5}}'
+  -d '{"brief":"warm pads","num_clips":3,"params":{"energy":0.6,"density":0.4,"duration_sec":8,"tempo_bpm":110,"brightness":0.4}}'
 ```
 response contains `session_id`, `batch.id`, cluster/track ids, and `audio_url` paths (served locally).
 
@@ -68,3 +71,4 @@ response contains `session_id`, `batch.id`, cluster/track ids, and `audio_url` p
 - state is per-process; horizontal scaling needs shared store + media.
 - `/media` directory must be writable; failures surface as 500s.
 - CLAP and torch bring heavy deps; leave `CLAP_ENABLED=false` unless you need real embeddings.
+- “more like this” is implemented as generate → embed → cosine filter to parent centroid; no retrieval layer yet.
