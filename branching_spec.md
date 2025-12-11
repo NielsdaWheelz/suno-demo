@@ -17,7 +17,8 @@ high-level behavior
 	•	parentNodeId = id of the node you clicked from
 	•	UI shows:
 	•	each generation as one row with up to 3 cards.
-	•	every card is a full “cluster card”: label, play button, “more like this”.
+	•	every card is a full “node card”: label, play button, “more like this”.
+	•	lines are drawn between each node and its parent (SVG overlay).
 
 no more numClips control in the UI; always 3.
 
@@ -55,8 +56,8 @@ export type SessionState = {
   errorMessage?: string;
   // keep if needed:
   loadingClusterId?: string;   // can re-interpret as “loadingNodeId” or drop
-  activeClusterId?: string;    // can be removed or repurposed; in v1 we can drop it
   nextGenerationIndex: number; // NEW: tracks next row index
+  selectedNodeId?: NodeId;     // current focus for play/highlight
 };
 
 explicit rules:
@@ -308,7 +309,7 @@ export function NodeCard({ node, onMoreLike, onPlay }: NodeCardProps): JSX.Eleme
   );
 }
 
-note: if you already have PlayerContext wired, NodeCard can just call playTrack(node.track, node.label) inside handlePlayClick instead of passing onPlay down.
+note: if you already have PlayerContext wired, NodeCard can just call playTrack(node.track, node.label) inside handlePlayClick instead of passing onPlay down. BottomPlayer remains the single audio surface.
 
 6. App wiring
 
@@ -459,4 +460,3 @@ files touched / added:
 out of scope:
 	•	no backend changes.
 	•	no changes to provider interfaces or labels.
-	•	no graph lines, only rows-of-three cards.

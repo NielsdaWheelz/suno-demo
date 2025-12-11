@@ -1,5 +1,5 @@
 ## scope
-- backend fastapi service for “suno session lab”: ingest brief + params, generate a batch of clips, embed + k-means cluster + name clusters, store session state in memory, and expose two blocking endpoints: `POST /sessions` (create session + initial batch) and `POST /sessions/{session_id}/clusters/{cluster_id}/more` (generate more like a cluster).
+- backend fastapi service for “suno session lab”: ingest brief + params, generate a batch of clips, embed + k-means cluster + name clusters, store session state in memory, and expose two blocking endpoints: `POST /sessions` (create session + initial batch) and `POST /sessions/{session_id}/clusters/{cluster_id}/more` (generate more like a cluster). also includes dev-only helpers: `DELETE /media-cache` and `POST /music/settings` (force_instrumental toggle).
 
 ## module structure (under `backend/app/`)
 - `main.py`: fastapi app factory, router registration, dependency wiring, settings init.
@@ -14,7 +14,7 @@
 - `services/fake_music_provider.py`: fake batch generator returning temp wavs.
 - `services/fake_embedding_provider.py`: fake embeddings generator.
 - `services/fake_cluster_naming_provider.py`: fake naming stub.
-- `services/hf_musicgen_provider.py`: HF Inference API client for `facebook/musicgen-small`.
+- `services/elevenlabs_music_provider.py`: ElevenLabs text-to-music client.
 - `services/clap_embedding_provider.py`: CLAP (`laion/clap-htsat-unfused`) audio embeddings via torch/torchaudio.
 - `services/openai_cluster_naming_provider.py`: LLM-based cluster naming.
 - `api/sessions.py`: fastapi router for both endpoints; dependency injection of service/providers.
@@ -29,7 +29,9 @@ class BriefParams(BaseModel):
     energy: float
     density: float
     duration_sec: float
-    """Music control params: 0-1 energy/density, duration <=10s."""
+    tempo_bpm: float
+    brightness: float
+    """Music control params: 0-1 energy/density/brightness, tempo>0, duration>0."""
 
 class Track(BaseModel):
     id: UUID
@@ -72,7 +74,7 @@ class CreateSessionRequest(BaseModel):
     brief: str
     num_clips: int
     params: BriefParams
-    """Input brief + count + params."""
+    """Input brief + count + params (energy, density, duration_sec, tempo_bpm, brightness)."""
 
 class TrackOut(BaseModel):
     id: UUID
@@ -162,28 +164,29 @@ class SessionService:
         """Validate num_clips <= max_batch_size (else 400), generate tracks near centroid, filter, persist new batch with inherited label; creates new ClusterSummary id (parent unchanged); num_generated = accepted clips."""
     @staticmethod
     def render_prompt(brief: str, params: BriefParams) -> str:
-        """Deterministic prompt: f\"{brief} | energy={params.energy:.2f} | density={params.density:.2f} | duration={params.duration_sec:.1f}s\"."""
+        """Deterministic prompt: f\"{brief} | energy={params.energy:.2f} | density={params.density:.2f} | duration={params.duration_sec:.1f}s | tempo={params.tempo_bpm:.0f}bpm | brightness={params.brightness:.2f}\"."""
 ```
 
 SessionService semantics:
 - num_generated: initial batch = number of clips successfully returned and stored; more_like_cluster = number of accepted clips after similarity filtering (discarded/rejected not counted).
 - cluster ids: more_like_cluster creates a new ClusterSummary id; parent cluster remains unchanged; label is copied from parent.
 - max_batch_size: enforced in SessionService for both methods; violations surface as domain errors mapped to HTTP 400; MusicProvider assumes num_clips already validated.
+- more_like_cluster: generate → embed → cosine similarity to parent centroid with threshold; if no clip clears the threshold, fall back to top-N ordering.
 
 ## provider implementations (behavior-level)
 - `FakeMusicProvider` → `MusicProvider`; deps: stdlib/tempfile/wave or numpy noise; returns deterministic/synthetic wavs under `media_root/tmp`; uses input prompt, duration, count; skips failures by returning fewer clips; raises only if none produced.
 - `FakeEmbeddingProvider` → `EmbeddingProvider`; deps: numpy; returns fixed-length deterministic vectors (e.g., seeded on path text); `embed_text` stub matching audio dimension.
 - `FakeClusterNamingProvider` → `ClusterNamingProvider`; deps: none; returns deterministic 1–3 word ASCII label obeying real constraints; never raises.
-- `HfMusicGenProvider` → `MusicProvider`; deps: `requests` to HF Inference API `facebook/musicgen-small`; posts prompt/duration; streams/writes wav to temp; duration_sec measured from returned audio (not requested target); skips failed clips; raises if all fail.
-- `ClapEmbeddingProvider` → `EmbeddingProvider`; deps: `torch`, `torchaudio`, `laion/clap-htsat-unfused`; loads model once; `embed_audio` loads wav, normalizes, forwards to model, returns numpy float32 vector; `embed_text` optional passthrough.
+- `ElevenLabsMusicProvider` → `MusicProvider`; deps: `requests`; posts prompt to `https://api.elevenlabs.io/v1/music/detailed`; writes PCM wavs under `media_root/tmp`; peak-normalizes audio; honors `force_instrumental`; raises if all fail.
+- `ClapEmbeddingProvider` → `EmbeddingProvider`; deps: `torch`, `torchaudio`, `laion/clap-htsat-unfused`; loads model once; `embed_audio` loads wav via `wave` (16-bit PCM), resamples to 48k, normalizes, forwards to model; `embed_text` optional passthrough.
 - `OpenAiClusterNamingProvider` → `ClusterNamingProvider`; deps: OpenAI client; prompts LLM with up to 3 raw prompts; enforces ASCII, strip punctuation/quotes; on api error, propagate to caller (service handles fallback).
 
 ## constants & configuration
 - constants: `DEFAULT_MAX_K = 3`; `MIN_SIMILARITY = 0.3`; `MAX_BATCH_SIZE` from settings (<=6 per API constraint); `KMEANS_RANDOM_STATE = 42`; `KMEANS_N_INIT = 10`; `KMEANS_MAX_ITER = 300`; prompt template fixed.
-- `Settings` (pydantic BaseSettings) fields: `media_root: Path`; `max_batch_size: int`; `default_max_k: int`; `min_similarity: float`; `hf_api_url/model`; `hf_api_token`; `openai_api_key`; `clap_model_name`; optional `log_level`.
+- `Settings` (pydantic BaseSettings) fields: `media_root: Path`; `max_batch_size: int`; `default_max_k: int`; `min_similarity: float`; `cors_allow_origins_raw`; `music_provider`; `openai_api_key`; `elevenlabs_api_key`; `elevenlabs_output_format`; `elevenlabs_force_instrumental`; `clap_enabled`; `clap_model_name`; `use_fake_namer`.
 - loading: env vars with sensible defaults for local dev; secrets required for real providers; fakes ignore keys.
 - hard-coded in v1: prompt template; k-means params; `MIN_SIMILARITY=0.3` unless overridden by settings; ASCII-only cluster labels enforced in provider/service; max public num_clips constrained by both API validation (1..6) and `max_batch_size` guard in service; SessionService is authority for `max_batch_size` and returns 400 on violation; MusicProvider may assume num_clips already validated.
-- media handling: providers write to `media_root/tmp`; service ensures `media_root/{session_id}/` exists, moves/renames to `{track_id}.wav`, sets `audio_url` to `/media/{session_id}/{track_id}.wav`. Clarification: media_root must be writable; behavior undefined if not—treat as 500.
+- media handling: providers write to `media_root/tmp`; service ensures `media_root/{session_id}/` exists, moves/renames to `{track_id}.wav`, sets `audio_url` to `/media/{session_id}/{track_id}.wav`. Clarification: media_root must be writable; behavior undefined if not—treat as 500. media is cleared on startup; `/media-cache` exists as a dev helper.
 
 ## test plan mapped to files
 - `tests/core/test_clustering.py`: cluster_embeddings happy path; singleton merge; all-singletons case; k cap.

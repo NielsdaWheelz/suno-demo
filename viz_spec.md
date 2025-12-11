@@ -1,7 +1,7 @@
 1. goal & constraints
 
 goal:
-add an audio-reactive radial bars visualizer to the bottom player that:
+add an audio-reactive bar visualizer to the bottom player that:
 	•	responds in real time to whichever track is currently playing
 	•	is eye-catching but not insane to implement
 	•	has zero backend impact
@@ -24,7 +24,7 @@ constraints:
 	•	useAudioVisualizer(audioRef, canvasRef) hook:
 	•	creates & manages AudioContext, AnalyserNode, and animation loop
 	•	connects the <audio> element to the analyser
-	•	draws radial frequency bars at ~60fps
+	•	draws frequency bars at ~60fps
 
 no global state changes. no provider changes.
 
@@ -91,7 +91,7 @@ type VisualizerState = {
 
 ⸻
 
-3.2 radial bars drawing algorithm
+3.2 bar drawing algorithm
 
 drawing happens inside the animation loop in useAudioVisualizer.
 
@@ -100,52 +100,26 @@ input:
 	•	each element in [0, 255] representing frequency magnitude
 
 canvas setup:
-	•	canvas width/height: always match display size; handle resize by checking clientWidth/clientHeight and resizing canvas.width / canvas.height accordingly each frame if changed.
-	•	center:
-
-const width = canvas.width;
-const height = canvas.height;
-const cx = width / 2;
-const cy = height / 2;
-const radiusBase = Math.min(width, height) * 0.25; // inner radius
-const radiusMax = Math.min(width, height) * 0.45;  // outer radius
-
-
+	•	canvas width/height: match client size each frame (resize if needed).
 
 bars:
-	•	choose numBars = 64 (downsample dataArray to 64 points).
-	•	for i in [0, numBars):
+	•	numBars = 64.
+	•	for each bar:
 
-const angle = (i / numBars) * 2 * Math.PI;      // around circle
-const idx = Math.floor((i / numBars) * N);      // map to data index
-const magnitude = dataArray[idx] / 255;         // 0..1
-const barLength = radiusBase + magnitude * (radiusMax - radiusBase);
+const idx = Math.floor((i / numBars) * N);
+const magnitude = dataArray[idx] / 255;
+const barHeight = magnitude * (height * 0.6);
+const xCenter = i * barWidth + barWidth / 2;
+const y0 = baselineY; // baselineY = height * 0.8
+const y1 = Math.max(0, baselineY - barHeight);
+const hue = 180 + magnitude * 120;      // cyan → magenta
+const lightness = 50 + magnitude * 20;
+ctx.strokeStyle = `hsl(${hue}, 85%, ${lightness}%)`;
 
-
-	•	each bar is a line from radiusBase to barLength at that angle:
-
-const x0 = cx + radiusBase * Math.cos(angle);
-const y0 = cy + radiusBase * Math.sin(angle);
-const x1 = cx + barLength * Math.cos(angle);
-const y1 = cy + barLength * Math.sin(angle);
-
-
-	•	draw with:
-
-ctx.strokeStyle = "rgba(56, 189, 248, 0.9)"; // sky-400-ish
-ctx.lineWidth = 2;
-ctx.beginPath();
-ctx.moveTo(x0, y0);
-ctx.lineTo(x1, y1);
-ctx.stroke();
-
-
+	•	draw a vertical line from (xCenter, y0) to (xCenter, y1); lineWidth scales with bar width.
 
 background:
-	•	clear each frame with a dark translucency so it trails slightly:
-
-ctx.fillStyle = "rgba(15, 23, 42, 0.9)"; // slate-900-like
-ctx.fillRect(0, 0, width, height);
+	•	fill each frame with `rgba(15, 23, 42, 0.9)` (dark trail).
 
 
 
@@ -181,7 +155,7 @@ const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
 useAudioVisualizer(audioRef, canvasRef);
 
-	2.	wrap markup to layer canvas under content:
+	2.	wrap markup to layer canvas under content and autoplay new selections:
 
 if (!currentTrack) {
   return (
@@ -208,8 +182,10 @@ return (
       </div>
       <audio
         ref={audioRef}
+        crossOrigin="anonymous"
         controls
-        src={currentTrack.track.audio_url}
+        autoPlay
+        src={resolveApiUrl(currentTrack.track.audio_url)}
         className="w-64 max-w-full"
       />
     </div>
@@ -270,11 +246,11 @@ file: src/components/__tests__/BottomPlayer.visualizer.test.tsx
 
 7. PR scope summary
 
-PR title: “Add radial bars audio visualizer to BottomPlayer”
+PR title: “Add audio visualizer to BottomPlayer”
 
 in-scope:
 	•	new useAudioVisualizer hook
-	•	Web Audio + canvas-based radial bars rendering
+	•	Web Audio + canvas-based bar rendering
 	•	BottomPlayer ref wiring and layout changes
 	•	minimal tests for hook wiring and BottomPlayer
 

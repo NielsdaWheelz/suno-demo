@@ -3,9 +3,9 @@
 frontend-only readme. backend docs are handled elsewhere.
 
 ## what this is
-- single-page “suno-like” ui that lets a user enter a brief, set a few numeric params, request a batch of clips, view clusters/tracks, and request “more like this” from a cluster.
+- single-page “suno-like” ui that lets a user enter a brief, set a few control params, generate 3 clips at a time, and explore **node-based branching** (“more like this” from any node) with lineage lines.
 - entirely in-memory per page load; no routing, auth, or persistence.
-- uses native `<audio>` for playback; bottom bar is a simple now-playing area.
+- uses a single bottom `<audio>` element (centralized player) with a lightweight audio visualizer; Track tiles no longer embed their own `<audio>`.
 
 ## stack
 - react 19 + typescript, vite, tailwindcss.
@@ -30,25 +30,25 @@ npm install
 
 ## layout & components
 - `src/main.tsx`: bootstraps react-query provider, renders `App`.
-- `src/App.tsx`: owns session + control state, wires api mutations, and renders the three-slot shell (`Sidebar`, `MainPanel`, `BottomPlayer`).
+- `src/App.tsx`: owns session + control state, wires api mutations, and renders the three-slot shell (`Sidebar`, `MainPanel`, `BottomPlayer`) inside `PlayerProvider`.
 - `components/`
   - `ShellLayout`: grid shell (sidebar, main, bottom bar).
   - `Sidebar`: static nav placeholder.
-  - `MainPanel`: wraps control panel + cluster area; shows session status/error banner.
-  - `ControlPanel`: brief textarea, clamped num_clips input (1–6), energy/density/duration sliders, generate button; disables during mutations.
-  - `ClusterGrid`: renders cluster cards; handles empty/loading placeholder text.
-  - `ClusterCard`: label + source tag, per-card “more like this” button (disabled when loading), list of `TrackTile`.
-  - `TrackTile`: shows track id/duration, inline `<audio controls>`, “send to player”.
-  - `BottomPlayer`: single `<audio>` for the selected track; shows cluster label + short id.
+  - `MainPanel`: two-column layout (controls left, generations right).
+  - `ControlPanel`: brief textarea; sliders for energy/density/duration_sec/tempo_bpm/brightness; “instrumental only” checkbox; generate button; no `num_clips` input (UI is fixed to 3 clips per generation).
+  - `NodeGrid`: groups nodes by generationIndex, draws lineage lines, renders `NodeCard` rows; handles empty/loading placeholders.
+  - `NodeCard`: label + parent hint, play + “more like this” buttons (disabled on global loading).
+  - `TrackTile`: trimmed-down play button that uses `PlayerContext` (no inline `<audio>`).
+  - `BottomPlayer`: single `<audio>` for the selected track + canvas visualizer; auto-plays selection; shows label + short id.
 
 ## data flow (happy path)
-1) generate: `ControlPanel` submit → `App` calls `createSession` → maps returned clusters to `ClusterView` with `source="initial"` → `ClusterGrid` renders them. loading/error states live in `App` and flow down.
-2) more-like: user clicks on a cluster → `App` calls `moreLikeCluster` with current `num_clips` → expects exactly one cluster in response → appended with `source="more"` + `parentClusterId`. button/controls disable while loading that cluster.
-3) track selection: `TrackTile` → `App` sets `currentTrack` → `BottomPlayer` shows it; playback is manual.
+1) generate: `ControlPanel` submit → `App` calls `createSession` → maps returned tracks to `NodeView` with `generationIndex=0` → `NodeGrid` renders them. loading/error states live in `App` and flow down.
+2) more-like: user clicks “more like this” on a node → `App` calls `moreLikeCluster` with fixed `num_clips=3` and the node’s `backendClusterId` → response cluster is flattened to new nodes with `generationIndex=nextGenerationIndex` and `parentNodeId` set to the clicked node → appended and selected.
+3) playback: any play button calls `playTrack` from `PlayerContext`; `BottomPlayer` auto-plays and shows the selection with visualizer.
 
 ## styling
 - tailwind classes only; dark theme base (`bg-slate-950`, `text-slate-100`).
-- layout grid: sidebar fixed ~220px, bottom player fixed height, main scrolls; cluster grid responsive (1/2/3 cols based on breakpoints).
+- layout grid: sidebar fixed ~220px, bottom player fixed height, main scrolls; node grid uses 1/3 columns with SVG overlay for lines.
 
 ## tests
 - key flows are covered in `src/components/__tests__` and `src/App*.test.tsx`. run `npm run test`. jsdom is configured in `src/test/setup.ts`.
